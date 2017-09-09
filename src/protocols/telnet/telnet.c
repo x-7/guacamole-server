@@ -195,13 +195,21 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
         /* Remote feature enabled */
         case TELNET_EV_WILL:
-            if (event->neg.telopt == TELNET_TELOPT_ECHO)
+            if (settings->override_echo != NULL && strcmp(settings->override_echo, "disabled") == 0)
+                telnet_client->echo_enabled = 0;
+            else if (settings->override_echo != NULL && strcmp(settings->override_echo, "enabled") == 0)
+                telnet_client->echo_enabled = 1;
+            else if (event->neg.telopt == TELNET_TELOPT_ECHO)
                 telnet_client->echo_enabled = 0; /* Disable local echo, as remote will echo */
             break;
 
         /* Remote feature disabled */
         case TELNET_EV_WONT:
-            if (event->neg.telopt == TELNET_TELOPT_ECHO)
+            if (settings->override_echo != NULL && strcmp(settings->override_echo, "enabled") == 0)
+                telnet_client->echo_enabled = 1;
+            else if (settings->override_echo != NULL && strcmp(settings->override_echo, "disabled") == 0)
+                telnet_client->echo_enabled = 0;
+            else if (event->neg.telopt == TELNET_TELOPT_ECHO)
                 telnet_client->echo_enabled = 1; /* Enable local echo, as remote won't echo */
             break;
 

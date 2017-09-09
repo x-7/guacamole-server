@@ -128,6 +128,11 @@ typedef struct guac_telnet_settings {
     int font_size;
 
     /**
+     * Override the local echo detection.
+     */
+    char* override_echo;
+
+    /**
      * The name of the color scheme to use.
      */
     char* color_scheme; 

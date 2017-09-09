@@ -39,6 +39,7 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
     "password-regex",
     "font-name",
     "font-size",
+    "override-echo",
     "color-scheme",
     "typescript-path",
     "typescript-name",
@@ -93,6 +94,11 @@ enum TELNET_ARGS_IDX {
      * The size of the font to use within the terminal, in points.
      */
     IDX_FONT_SIZE,
+
+    /**
+     * Whether or not to override the local telnet echo.
+     */
+    IDX_OVERRIDE_ECHO,
 
     /**
      * The name of the color scheme to use. Currently valid color schemes are:
@@ -239,6 +245,11 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
         guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
                 IDX_FONT_SIZE, GUAC_TELNET_DEFAULT_FONT_SIZE);
 
+    /* Read echo override */
+    settings->override_echo =
+        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_OVERRIDE_ECHO, NULL);
+
     /* Copy requested color scheme */
     settings->color_scheme =
         guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
@@ -314,6 +325,7 @@ void guac_telnet_settings_free(guac_telnet_settings* settings) {
     /* Free display preferences */
     free(settings->font_name);
     free(settings->color_scheme);
+    free(settings->override_echo);
 
     /* Free typescript settings */
     free(settings->typescript_name);
