@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef GUAC_TELNET_INPUT_H
-#define GUAC_TELNET_INPUT_H
+#ifndef GUAC_TN5250_INPUT_H
+#define GUAC_TN5250_INPUT_H
 
 #include "config.h"
 
@@ -28,19 +28,19 @@
  * Handler for key events. Required by libguac and called whenever key events
  * are received.
  */
-guac_user_key_handler guac_telnet_user_key_handler;
+guac_user_key_handler guac_tn5250_user_key_handler;
 
 /**
  * Handler for mouse events. Required by libguac and called whenever mouse
  * events are received.
  */
-guac_user_mouse_handler guac_telnet_user_mouse_handler;
+guac_user_mouse_handler guac_tn5250_user_mouse_handler;
 
 /**
  * Handler for size events. Required by libguac and called whenever the remote
  * display (window) is resized.
  */
-guac_user_size_handler guac_telnet_user_size_handler;
+guac_user_size_handler guac_tn5250_user_size_handler;
 
 #endif
 

@@ -35,13 +35,13 @@
 #include <pthread.h>
 #include <string.h>
 
-int guac_telnet_user_join_handler(guac_user* user, int argc, char** argv) {
+int guac_tn5250_user_join_handler(guac_user* user, int argc, char** argv) {
 
     guac_client* client = user->client;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
 
     /* Parse provided arguments */
-    guac_telnet_settings* settings = guac_telnet_parse_args(user,
+    guac_tn5250_settings* settings = guac_tn5250_parse_args(user,
             argc, (const char**) argv);
 
     /* Fail if settings cannot be parsed */
@@ -54,17 +54,17 @@ int guac_telnet_user_join_handler(guac_user* user, int argc, char** argv) {
     /* Store settings at user level */
     user->data = settings;
 
-    /* Connect via telnet if owner */
+    /* Connect via tn5250 if owner */
     if (user->owner) {
 
         /* Store owner's settings at client level */
-        telnet_client->settings = settings;
+        tn5250_client->settings = settings;
 
         /* Start client thread */
-        if (pthread_create(&(telnet_client->client_thread), NULL,
-                    guac_telnet_client_thread, (void*) client)) {
+        if (pthread_create(&(tn5250_client->client_thread), NULL,
+                    guac_tn5250_client_thread, (void*) client)) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "Unable to start telnet client thread");
+                    "Unable to start tn5250 client thread");
             return 1;
         }
 
@@ -72,7 +72,7 @@ int guac_telnet_user_join_handler(guac_user* user, int argc, char** argv) {
 
     /* If not owner, synchronize with current display */
     else {
-        guac_terminal_dup(telnet_client->term, user, user->socket);
+        guac_terminal_dup(tn5250_client->term, user, user->socket);
         guac_socket_flush(user->socket);
     }
 
@@ -80,21 +80,21 @@ int guac_telnet_user_join_handler(guac_user* user, int argc, char** argv) {
     if (!settings->read_only) {
 
         /* General mouse/keyboard events */
-        user->key_handler = guac_telnet_user_key_handler;
-        user->mouse_handler = guac_telnet_user_mouse_handler;
+        user->key_handler = guac_tn5250_user_key_handler;
+        user->mouse_handler = guac_tn5250_user_mouse_handler;
 
         /* Inbound (client to server) clipboard transfer */
         if (!settings->disable_paste)
-            user->clipboard_handler = guac_telnet_clipboard_handler;
+            user->clipboard_handler = guac_tn5250_clipboard_handler;
 
         /* STDIN redirection */
-        user->pipe_handler = guac_telnet_pipe_handler;
+        user->pipe_handler = guac_tn5250_pipe_handler;
 
         /* Updates to connection parameters */
-        user->argv_handler = guac_telnet_argv_handler;
+        user->argv_handler = guac_tn5250_argv_handler;
 
         /* Display size change events */
-        user->size_handler = guac_telnet_user_size_handler;
+        user->size_handler = guac_tn5250_user_size_handler;
 
     }
 
@@ -102,18 +102,18 @@ int guac_telnet_user_join_handler(guac_user* user, int argc, char** argv) {
 
 }
 
-int guac_telnet_user_leave_handler(guac_user* user) {
+int guac_tn5250_user_leave_handler(guac_user* user) {
 
-    guac_telnet_client* telnet_client =
-        (guac_telnet_client*) user->client->data;
+    guac_tn5250_client* tn5250_client =
+        (guac_tn5250_client*) user->client->data;
 
     /* Update shared cursor state */
-    guac_common_cursor_remove_user(telnet_client->term->cursor, user);
+    guac_common_cursor_remove_user(tn5250_client->term->cursor, user);
 
     /* Free settings if not owner (owner settings will be freed with client) */
     if (!user->owner) {
-        guac_telnet_settings* settings = (guac_telnet_settings*) user->data;
-        guac_telnet_settings_free(settings);
+        guac_tn5250_settings* settings = (guac_tn5250_settings*) user->data;
+        guac_tn5250_settings_free(settings);
     }
 
     return 0;

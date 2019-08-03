@@ -30,50 +30,50 @@
 #include <string.h>
 
 /**
- * All telnet connection settings which may be updated by unprivileged users
+ * All tn5250 connection settings which may be updated by unprivileged users
  * through "argv" streams.
  */
-typedef enum guac_telnet_argv_setting {
+typedef enum guac_tn5250_argv_setting {
 
     /**
      * The color scheme of the terminal.
      */
-    GUAC_TELNET_ARGV_SETTING_COLOR_SCHEME,
+    GUAC_TN5250_ARGV_SETTING_COLOR_SCHEME,
 
     /**
      * The name of the font family used by the terminal.
      */
-    GUAC_TELNET_ARGV_SETTING_FONT_NAME,
+    GUAC_TN5250_ARGV_SETTING_FONT_NAME,
 
     /**
      * The size of the font used by the terminal, in points.
      */
-    GUAC_TELNET_ARGV_SETTING_FONT_SIZE
+    GUAC_TN5250_ARGV_SETTING_FONT_SIZE
 
-} guac_telnet_argv_setting;
+} guac_tn5250_argv_setting;
 
 /**
  * The value or current status of a connection parameter received over an
  * "argv" stream.
  */
-typedef struct guac_telnet_argv {
+typedef struct guac_tn5250_argv {
 
     /**
      * The specific setting being updated.
      */
-    guac_telnet_argv_setting setting;
+    guac_tn5250_argv_setting setting;
 
     /**
      * Buffer space for containing the received argument value.
      */
-    char buffer[GUAC_TELNET_ARGV_MAX_LENGTH];
+    char buffer[GUAC_TN5250_ARGV_MAX_LENGTH];
 
     /**
      * The number of bytes received so far.
      */
     int length;
 
-} guac_telnet_argv;
+} guac_tn5250_argv;
 
 /**
  * Handler for "blob" instructions which appends the data from received blobs
@@ -81,10 +81,10 @@ typedef struct guac_telnet_argv {
  *
  * @see guac_user_blob_handler
  */
-static int guac_telnet_argv_blob_handler(guac_user* user,
+static int guac_tn5250_argv_blob_handler(guac_user* user,
         guac_stream* stream, void* data, int length) {
 
-    guac_telnet_argv* argv = (guac_telnet_argv*) stream->data;
+    guac_tn5250_argv* argv = (guac_tn5250_argv*) stream->data;
 
     /* Calculate buffer size remaining, including space for null terminator,
      * adjusting received length accordingly */
@@ -106,40 +106,40 @@ static int guac_telnet_argv_blob_handler(guac_user* user,
  *
  * @see guac_user_end_handler
  */
-static int guac_telnet_argv_end_handler(guac_user* user,
+static int guac_tn5250_argv_end_handler(guac_user* user,
         guac_stream* stream) {
 
     int size;
 
     guac_client* client = user->client;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_terminal* terminal = telnet_client->term;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
+    guac_terminal* terminal = tn5250_client->term;
 
     /* Append null terminator to value */
-    guac_telnet_argv* argv = (guac_telnet_argv*) stream->data;
+    guac_tn5250_argv* argv = (guac_tn5250_argv*) stream->data;
     argv->buffer[argv->length] = '\0';
 
     /* Apply changes to chosen setting */
     switch (argv->setting) {
 
         /* Update color scheme */
-        case GUAC_TELNET_ARGV_SETTING_COLOR_SCHEME:
+        case GUAC_TN5250_ARGV_SETTING_COLOR_SCHEME:
             guac_terminal_apply_color_scheme(terminal, argv->buffer);
             break;
 
         /* Update font name */
-        case GUAC_TELNET_ARGV_SETTING_FONT_NAME:
+        case GUAC_TN5250_ARGV_SETTING_FONT_NAME:
             guac_terminal_apply_font(terminal, argv->buffer, -1, 0);
             break;
 
         /* Update font size */
-        case GUAC_TELNET_ARGV_SETTING_FONT_SIZE:
+        case GUAC_TN5250_ARGV_SETTING_FONT_SIZE:
 
             /* Update only if font size is sane */
             size = atoi(argv->buffer);
             if (size > 0) {
                 guac_terminal_apply_font(terminal, NULL, size,
-                        telnet_client->settings->resolution);
+                        tn5250_client->settings->resolution);
             }
 
             break;
@@ -147,8 +147,8 @@ static int guac_telnet_argv_end_handler(guac_user* user,
     }
 
     /* Update terminal window size if connected */
-    if (telnet_client->telnet != NULL && telnet_client->naws_enabled)
-        guac_telnet_send_naws(telnet_client->telnet, terminal->term_width,
+    if (tn5250_client->tn5250 != NULL && tn5250_client->naws_enabled)
+        guac_tn5250_send_naws(tn5250_client->tn5250, terminal->term_width,
                 terminal->term_height);
 
     free(argv);
@@ -156,18 +156,18 @@ static int guac_telnet_argv_end_handler(guac_user* user,
 
 }
 
-int guac_telnet_argv_handler(guac_user* user, guac_stream* stream,
+int guac_tn5250_argv_handler(guac_user* user, guac_stream* stream,
         char* mimetype, char* name) {
 
-    guac_telnet_argv_setting setting;
+    guac_tn5250_argv_setting setting;
 
     /* Allow users to update the color scheme and font details */
     if (strcmp(name, "color-scheme") == 0)
-        setting = GUAC_TELNET_ARGV_SETTING_COLOR_SCHEME;
+        setting = GUAC_TN5250_ARGV_SETTING_COLOR_SCHEME;
     else if (strcmp(name, "font-name") == 0)
-        setting = GUAC_TELNET_ARGV_SETTING_FONT_NAME;
+        setting = GUAC_TN5250_ARGV_SETTING_FONT_NAME;
     else if (strcmp(name, "font-size") == 0)
-        setting = GUAC_TELNET_ARGV_SETTING_FONT_SIZE;
+        setting = GUAC_TN5250_ARGV_SETTING_FONT_SIZE;
 
     /* No other connection parameters may be updated */
     else {
@@ -177,13 +177,13 @@ int guac_telnet_argv_handler(guac_user* user, guac_stream* stream,
         return 0;
     }
 
-    guac_telnet_argv* argv = malloc(sizeof(guac_telnet_argv));
+    guac_tn5250_argv* argv = malloc(sizeof(guac_tn5250_argv));
     argv->setting = setting;
     argv->length = 0;
 
     /* Prepare stream to receive argument value */
-    stream->blob_handler = guac_telnet_argv_blob_handler;
-    stream->end_handler = guac_telnet_argv_end_handler;
+    stream->blob_handler = guac_tn5250_argv_blob_handler;
+    stream->end_handler = guac_tn5250_argv_end_handler;
     stream->data = argv;
 
     /* Signal stream is ready */

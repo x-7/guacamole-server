@@ -33,12 +33,12 @@
 /**
  * Telnet-specific client data.
  */
-typedef struct guac_telnet_client {
+typedef struct guac_tn5250_client {
 
     /**
      * Telnet connection settings.
      */
-    guac_telnet_settings* settings;
+    guac_tn5250_settings* settings;
 
     /**
      * The telnet client thread.
@@ -83,24 +83,24 @@ typedef struct guac_telnet_client {
      */
     guac_common_recording* recording;
 
-} guac_telnet_client;
+} guac_tn5250_client;
 
 /**
- * Main telnet client thread, handling transfer of telnet output to STDOUT.
+ * Main tn5250 client thread, handling transfer of tn5250 output to STDOUT.
  */
-void* guac_telnet_client_thread(void* data);
+void* guac_tn5250_client_thread(void* data);
 
 /**
  * Send a telnet NAWS message indicating the given terminal window dimensions
  * in characters.
  */
-void guac_telnet_send_naws(telnet_t* telnet, uint16_t width, uint16_t height);
+void guac_tn5250_send_naws(telnet_t* telnet, uint16_t width, uint16_t height);
 
 /**
  * Sends the given username by setting the remote USER environment variable
- * using the telnet NEW-ENVIRON option.
+ * using the tn5250 NEW-ENVIRON option.
  */
-void guac_telnet_send_user(telnet_t* telnet, const char* username);
+void guac_tn5250_send_user(telnet_t* telnet, const char* username);
 
 #endif
 

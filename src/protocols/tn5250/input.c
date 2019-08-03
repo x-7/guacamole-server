@@ -21,7 +21,7 @@
 #include "common/recording.h"
 #include "input.h"
 #include "terminal/terminal.h"
-#include "telnet.h"
+#include "tn5250.h"
 
 #include <guacamole/client.h>
 #include <guacamole/user.h>
@@ -32,20 +32,20 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-int guac_telnet_user_mouse_handler(guac_user* user, int x, int y, int mask) {
+int guac_tn5250_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
     guac_client* client = user->client;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_telnet_settings* settings = telnet_client->settings;
-    guac_terminal* term = telnet_client->term;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
+    guac_tn5250_settings* settings = tn5250_client->settings;
+    guac_terminal* term = tn5250_client->term;
 
     /* Skip if terminal not yet ready */
     if (term == NULL)
         return 0;
 
     /* Report mouse position within recording */
-    if (telnet_client->recording != NULL)
-        guac_common_recording_report_mouse(telnet_client->recording, x, y,
+    if (tn5250_client->recording != NULL)
+        guac_common_recording_report_mouse(tn5250_client->recording, x, y,
                 mask);
 
     /* Send mouse if not searching for password or username */
@@ -56,16 +56,16 @@ int guac_telnet_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
 }
 
-int guac_telnet_user_key_handler(guac_user* user, int keysym, int pressed) {
+int guac_tn5250_user_key_handler(guac_user* user, int keysym, int pressed) {
 
     guac_client* client = user->client;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_telnet_settings* settings = telnet_client->settings;
-    guac_terminal* term = telnet_client->term;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
+    guac_tn5250_settings* settings = tn5250_client->settings;
+    guac_terminal* term = tn5250_client->term;
 
     /* Report key state within recording */
-    if (telnet_client->recording != NULL)
-        guac_common_recording_report_key(telnet_client->recording,
+    if (tn5250_client->recording != NULL)
+        guac_common_recording_report_key(tn5250_client->recording,
                 keysym, pressed);
 
     /* Skip if terminal not yet ready */
@@ -104,7 +104,7 @@ int guac_telnet_user_key_handler(guac_user* user, int keysym, int pressed) {
        )) {
 
         /* Send IAC BRK */
-        telnet_iac(telnet_client->telnet, TELNET_BREAK);
+        telnet_iac(tn5250_client->telnet, TELNET_BREAK);
 
         return 0;
     }
@@ -116,12 +116,12 @@ int guac_telnet_user_key_handler(guac_user* user, int keysym, int pressed) {
 
 }
 
-int guac_telnet_user_size_handler(guac_user* user, int width, int height) {
+int guac_tn5250_user_size_handler(guac_user* user, int width, int height) {
 
     /* Get terminal */
     guac_client* client = user->client;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_terminal* terminal = telnet_client->term;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
+    guac_terminal* terminal = tn5250_client->term;
 
     /* Skip if terminal not yet ready */
     if (terminal == NULL)
@@ -131,8 +131,8 @@ int guac_telnet_user_size_handler(guac_user* user, int width, int height) {
     guac_terminal_resize(terminal, width, height);
 
     /* Update terminal window size if connected */
-    if (telnet_client->telnet != NULL && telnet_client->naws_enabled)
-        guac_telnet_send_naws(telnet_client->telnet, terminal->term_width,
+    if (tn5250_client->telnet != NULL && tn5250_client->naws_enabled)
+        guac_tn5250_send_naws(tn5250_client->telnet, terminal->term_width,
                 terminal->term_height);
 
     return 0;

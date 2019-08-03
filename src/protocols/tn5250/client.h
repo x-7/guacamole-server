@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef GUAC_TELNET__CLIENT_H
-#define GUAC_TELNET__CLIENT_H
+#ifndef GUAC_TN5250_CLIENT_H
+#define GUAC_TN5250_CLIENT_H
 
 #include "config.h"
 #include "terminal/terminal.h"
@@ -32,13 +32,13 @@
 /**
  * The maximum number of bytes to allow within the clipboard.
  */
-#define GUAC_TELNET_CLIPBOARD_MAX_LENGTH 262144
+#define GUAC_TN5250_CLIPBOARD_MAX_LENGTH 262144
 
 /**
  * Free handler. Required by libguac and called when the guac_client is
  * disconnected and must be cleaned up.
  */
-guac_client_free_handler guac_telnet_client_free_handler;
+guac_client_free_handler guac_tn5250_client_free_handler;
 
 #endif
 

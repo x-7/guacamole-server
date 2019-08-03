@@ -21,7 +21,7 @@
 #include "client.h"
 #include "common/recording.h"
 #include "settings.h"
-#include "telnet.h"
+#include "tn5250.h"
 #include "terminal/terminal.h"
 #include "user.h"
 
@@ -36,23 +36,23 @@
 int guac_client_init(guac_client* client) {
 
     /* Set client args */
-    client->args = GUAC_TELNET_CLIENT_ARGS;
+    client->args = GUAC_TN5250_CLIENT_ARGS;
 
     /* Allocate client instance data */
-    guac_telnet_client* telnet_client = calloc(1, sizeof(guac_telnet_client));
-    client->data = telnet_client;
+    guac_tn5250_client* tn5250_client = calloc(1, sizeof(guac_tn5250_client));
+    client->data = tn5250_client;
 
     /* Init clipboard */
-    telnet_client->clipboard = guac_common_clipboard_alloc(GUAC_TELNET_CLIPBOARD_MAX_LENGTH);
+    tn5250_client->clipboard = guac_common_clipboard_alloc(GUAC_TN5250_CLIPBOARD_MAX_LENGTH);
 
-    /* Init telnet client */
-    telnet_client->socket_fd = -1;
-    telnet_client->naws_enabled = 0;
-    telnet_client->echo_enabled = 1;
+    /* Init tn5250 client */
+    tn5250_client->socket_fd = -1;
+    tn5250_client->naws_enabled = 0;
+    tn5250_client->echo_enabled = 1;
 
     /* Set handlers */
-    client->join_handler = guac_telnet_user_join_handler;
-    client->free_handler = guac_telnet_client_free_handler;
+    client->join_handler = guac_tn5250_user_join_handler;
+    client->free_handler = guac_tn5250_client_free_handler;
 
     /* Set locale and warn if not UTF-8 */
     setlocale(LC_CTYPE, "");
@@ -67,33 +67,33 @@ int guac_client_init(guac_client* client) {
 
 }
 
-int guac_telnet_client_free_handler(guac_client* client) {
+int guac_tn5250_client_free_handler(guac_client* client) {
 
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
 
-    /* Close telnet connection */
-    if (telnet_client->socket_fd != -1)
-        close(telnet_client->socket_fd);
+    /* Close tn5250 connection */
+    if (tn5250_client->socket_fd != -1)
+        close(tn5250_client->socket_fd);
 
     /* Clean up recording, if in progress */
-    if (telnet_client->recording != NULL)
-        guac_common_recording_free(telnet_client->recording);
+    if (tn5250_client->recording != NULL)
+        guac_common_recording_free(tn5250_client->recording);
 
     /* Kill terminal */
-    guac_terminal_free(telnet_client->term);
+    guac_terminal_free(tn5250_client->term);
 
-    /* Wait for and free telnet session, if connected */
-    if (telnet_client->telnet != NULL) {
-        pthread_join(telnet_client->client_thread, NULL);
-        telnet_free(telnet_client->telnet);
+    /* Wait for and free tn5250 session, if connected */
+    if (tn5250_client->telnet != NULL) {
+        pthread_join(tn5250_client->client_thread, NULL);
+        telnet_free(tn5250_client->telnet);
     }
 
     /* Free settings */
-    if (telnet_client->settings != NULL)
-        guac_telnet_settings_free(telnet_client->settings);
+    if (tn5250_client->settings != NULL)
+        guac_tn5250_settings_free(tn5250_client->settings);
 
-    guac_common_clipboard_free(telnet_client->clipboard);
-    free(telnet_client);
+    guac_common_clipboard_free(tn5250_client->clipboard);
+    free(tn5250_client);
     return 0;
 
 }

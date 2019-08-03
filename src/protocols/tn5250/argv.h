@@ -18,8 +18,8 @@
  */
 
 
-#ifndef GUAC_TELNET_ARGV_H
-#define GUAC_TELNET_ARGV_H
+#ifndef GUAC_TN5250_ARGV_H
+#define GUAC_TN5250_ARGV_H
 
 #include "config.h"
 
@@ -29,13 +29,13 @@
  * The maximum number of bytes to allow for any argument value received via an
  * argv stream, including null terminator.
  */
-#define GUAC_TELNET_ARGV_MAX_LENGTH 16384
+#define GUAC_TN5250_ARGV_MAX_LENGTH 16384
 
 /**
  * Handles an incoming stream from a Guacamole "argv" instruction, updating the
  * given connection parameter if that parameter is allowed to be updated.
  */
-guac_user_argv_handler guac_telnet_argv_handler;
+guac_user_argv_handler guac_tn5250_argv_handler;
 
 #endif
 

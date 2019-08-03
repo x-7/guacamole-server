@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef GUAC_TELNET_CLIPBOARD_H
-#define GUAC_TELNET_CLIPBOARD_H
+#ifndef GUAC_TN5250_CLIPBOARD_H
+#define GUAC_TN5250_CLIPBOARD_H
 
 #include "config.h"
 
@@ -27,17 +27,17 @@
 /**
  * Handler for inbound clipboard streams.
  */
-guac_user_clipboard_handler guac_telnet_clipboard_handler;
+guac_user_clipboard_handler guac_tn5250_clipboard_handler;
 
 /**
  * Handler for data received along clipboard streams.
  */
-guac_user_blob_handler guac_telnet_clipboard_blob_handler;
+guac_user_blob_handler guac_tn5250_clipboard_blob_handler;
 
 /**
  * Handler for end-of-stream related to clipboard.
  */
-guac_user_end_handler guac_telnet_clipboard_end_handler;
+guac_user_end_handler guac_tn5250_clipboard_end_handler;
 
 #endif
 

@@ -18,8 +18,8 @@
  */
 
 
-#ifndef GUAC_TELNET_PIPE_H
-#define GUAC_TELNET_PIPE_H
+#ifndef GUAC_TN5250_PIPE_H
+#define GUAC_TN5250_PIPE_H
 
 #include "config.h"
 
@@ -29,14 +29,14 @@
  * The name reserved for the inbound pipe stream which forces the terminal
  * emulator's STDIN to be received from the pipe.
  */
-#define GUAC_TELNET_STDIN_PIPE_NAME "STDIN"
+#define GUAC_TN5250_STDIN_PIPE_NAME "STDIN"
 
 /**
  * Handles an incoming stream from a Guacamole "pipe" instruction. If the pipe
  * is named "STDIN", the the contents of the pipe stream are redirected to
  * STDIN of the terminal emulator for as long as the pipe is open.
  */
-guac_user_pipe_handler guac_telnet_pipe_handler;
+guac_user_pipe_handler guac_tn5250_pipe_handler;
 
 #endif
 

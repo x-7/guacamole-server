@@ -88,13 +88,13 @@ static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
  * sent after the value is sent.
  *
  * @param client
- *     The guac_client associated with the telnet session.
+ *     The guac_client associated with the tn5250 session.
  *
  * @param regex
  *     The regex to search for within the given line buffer.
  *
  * @param value
- *     The string value to send through STDIN of the telnet session if a
+ *     The string value to send through STDIN of the tn5250 session if a
  *     match is found, or NULL if no value should be sent.
  *
  * @param line_buffer
@@ -103,18 +103,18 @@ static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
  * @return
  *     true if a match is found, false otherwise.
  */
-static bool guac_telnet_regex_exec(guac_client* client, regex_t* regex,
+static bool guac_tn5250_regex_exec(guac_client* client, regex_t* regex,
         const char* value, const char* line_buffer) {
 
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
 
     /* Send value upon match */
     if (regexec(regex, line_buffer, 0, NULL, 0) == 0) {
 
         /* Send value */
         if (value != NULL) {
-            guac_terminal_send_string(telnet_client->term, value);
-            guac_terminal_send_string(telnet_client->term, "\x0D");
+            guac_terminal_send_string(tn5250_client->term, value);
+            guac_terminal_send_string(tn5250_client->term, "\x0D");
         }
 
         /* Stop searching for prompt */
@@ -134,60 +134,60 @@ static bool guac_telnet_regex_exec(guac_client* client, regex_t* regex,
  * completed, this function has no effect.
  *
  * @param client
- *     The guac_client associated with the telnet session.
+ *     The guac_client associated with the tn5250 session.
  *
  * @param line_buffer
  *     The line of character data to test.
  */
-static void guac_telnet_search_line(guac_client* client, const char* line_buffer) {
+static void guac_tn5250_search_line(guac_client* client, const char* line_buffer) {
 
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_telnet_settings* settings = telnet_client->settings;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
+    guac_tn5250_settings* settings = tn5250_client->settings;
 
     /* Continue search for username prompt */
     if (settings->username_regex != NULL) {
-        if (guac_telnet_regex_exec(client, settings->username_regex,
+        if (guac_tn5250_regex_exec(client, settings->username_regex,
                     settings->username, line_buffer)) {
             guac_client_log(client, GUAC_LOG_DEBUG, "Username sent");
-            guac_telnet_regex_free(&settings->username_regex);
+            guac_tn5250_regex_free(&settings->username_regex);
         }
     }
 
     /* Continue search for password prompt */
     if (settings->password_regex != NULL) {
-        if (guac_telnet_regex_exec(client, settings->password_regex,
+        if (guac_tn5250_regex_exec(client, settings->password_regex,
                     settings->password, line_buffer)) {
 
             guac_client_log(client, GUAC_LOG_DEBUG, "Password sent");
 
             /* Do not continue searching for username/password once password is sent */
-            guac_telnet_regex_free(&settings->username_regex);
-            guac_telnet_regex_free(&settings->password_regex);
+            guac_tn5250_regex_free(&settings->username_regex);
+            guac_tn5250_regex_free(&settings->password_regex);
 
         }
     }
 
     /* Continue search for login success */
     if (settings->login_success_regex != NULL) {
-        if (guac_telnet_regex_exec(client, settings->login_success_regex,
+        if (guac_tn5250_regex_exec(client, settings->login_success_regex,
                     NULL, line_buffer)) {
 
             /* Allow terminal to render now that login has been deemed successful */
             guac_client_log(client, GUAC_LOG_DEBUG, "Login successful");
-            guac_terminal_start(telnet_client->term);
+            guac_terminal_start(tn5250_client->term);
 
             /* Stop all searches */
-            guac_telnet_regex_free(&settings->username_regex);
-            guac_telnet_regex_free(&settings->password_regex);
-            guac_telnet_regex_free(&settings->login_success_regex);
-            guac_telnet_regex_free(&settings->login_failure_regex);
+            guac_tn5250_regex_free(&settings->username_regex);
+            guac_tn5250_regex_free(&settings->password_regex);
+            guac_tn5250_regex_free(&settings->login_success_regex);
+            guac_tn5250_regex_free(&settings->login_failure_regex);
 
         }
     }
 
     /* Continue search for login failure */
     if (settings->login_failure_regex != NULL) {
-        if (guac_telnet_regex_exec(client, settings->login_failure_regex,
+        if (guac_tn5250_regex_exec(client, settings->login_failure_regex,
                     NULL, line_buffer)) {
 
             /* Advise that login has failed and connection should be closed */
@@ -196,10 +196,10 @@ static void guac_telnet_search_line(guac_client* client, const char* line_buffer
                     "Login failed");
 
             /* Stop all searches */
-            guac_telnet_regex_free(&settings->username_regex);
-            guac_telnet_regex_free(&settings->password_regex);
-            guac_telnet_regex_free(&settings->login_success_regex);
-            guac_telnet_regex_free(&settings->login_failure_regex);
+            guac_tn5250_regex_free(&settings->username_regex);
+            guac_tn5250_regex_free(&settings->password_regex);
+            guac_tn5250_regex_free(&settings->login_success_regex);
+            guac_tn5250_regex_free(&settings->login_failure_regex);
 
         }
     }
@@ -214,7 +214,7 @@ static void guac_telnet_search_line(guac_client* client, const char* line_buffer
  * have completed, this function has no effect.
  *
  * @param client
- *     The guac_client associated with the telnet session.
+ *     The guac_client associated with the tn5250 session.
  *
  * @param buffer
  *     The buffer of received data to search through.
@@ -222,7 +222,7 @@ static void guac_telnet_search_line(guac_client* client, const char* line_buffer
  * @param size
  *     The size of the given buffer, in bytes.
  */
-static void guac_telnet_search(guac_client* client, const char* buffer, int size) {
+static void guac_tn5250_search(guac_client* client, const char* buffer, int size) {
 
     static char line_buffer[1024] = {0};
     static int length = 0;
@@ -237,7 +237,7 @@ static void guac_telnet_search(guac_client* client, const char* buffer, int size
         if (c == '\n') {
             if (length > 0) {
                 line_buffer[length] = '\0';
-                guac_telnet_search_line(client, line_buffer);
+                guac_tn5250_search_line(client, line_buffer);
                 length = 0;
             }
         }
@@ -252,7 +252,7 @@ static void guac_telnet_search(guac_client* client, const char* buffer, int size
     /* Attempt pattern match if an unfinished line remains (may be a prompt) */
     if (length > 0) {
         line_buffer[length] = '\0';
-        guac_telnet_search_line(client, line_buffer);
+        guac_tn5250_search_line(client, line_buffer);
     }
 
 }
@@ -262,23 +262,23 @@ static void guac_telnet_search(guac_client* client, const char* buffer, int size
  * telnet_init() and will be called for every event fired by libtelnet,
  * including feature enable/disable and receipt/transmission of data.
  */
-static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event, void* data) {
+static void __guac_tn5250_event_handler(telnet_t* telnet, telnet_event_t* event, void* data) {
 
     guac_client* client = (guac_client*) data;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_telnet_settings* settings = telnet_client->settings;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
+    guac_tn5250_settings* settings = tn5250_client->settings;
 
     switch (event->type) {
 
         /* Terminal output received */
         case TELNET_EV_DATA:
-            guac_terminal_write(telnet_client->term, event->data.buffer, event->data.size);
-            guac_telnet_search(client, event->data.buffer, event->data.size);
+            guac_terminal_write(tn5250_client->term, event->data.buffer, event->data.size);
+            guac_tn5250_search(client, event->data.buffer, event->data.size);
             break;
 
         /* Data destined for remote end */
         case TELNET_EV_SEND:
-            if (__guac_telnet_write_all(telnet_client->socket_fd, event->data.buffer, event->data.size)
+            if (__guac_tn5250_write_all(tn5250_client->socket_fd, event->data.buffer, event->data.size)
                     != event->data.size)
                 guac_client_stop(client);
             break;
@@ -286,27 +286,27 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
         /* Remote feature enabled */
         case TELNET_EV_WILL:
             if (event->neg.telopt == TELNET_TELOPT_ECHO)
-                telnet_client->echo_enabled = 0; /* Disable local echo, as remote will echo */
+                tn5250_client->echo_enabled = 0; /* Disable local echo, as remote will echo */
             break;
 
         /* Remote feature disabled */
         case TELNET_EV_WONT:
             if (event->neg.telopt == TELNET_TELOPT_ECHO)
-                telnet_client->echo_enabled = 1; /* Enable local echo, as remote won't echo */
+                tn5250_client->echo_enabled = 1; /* Enable local echo, as remote won't echo */
             break;
 
         /* Local feature enable */
         case TELNET_EV_DO:
             if (event->neg.telopt == TELNET_TELOPT_NAWS) {
-                telnet_client->naws_enabled = 1;
-                guac_telnet_send_naws(telnet, telnet_client->term->term_width, telnet_client->term->term_height);
+                tn5250_client->naws_enabled = 1;
+                guac_tn5250_send_naws(telnet, tn5250_client->term->term_width, tn5250_client->term->term_height);
             }
             break;
 
         /* Terminal type request */
         case TELNET_EV_TTYPE:
             if (event->ttype.cmd == TELNET_TTYPE_SEND)
-                telnet_ttype_is(telnet_client->telnet, settings->terminal_type);
+                tn5250_ttype_is(tn5250_client->telnet, settings->terminal_type);
             break;
 
         /* Environment request */
@@ -314,7 +314,7 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
             /* Only send USER if entire environment was requested */
             if (event->environ.size == 0)
-                guac_telnet_send_user(telnet, settings->username);
+                guac_tn5250_send_user(telnet, settings->username);
 
             break;
 
@@ -345,19 +345,19 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
  * @param data The current guac_client instance.
  * @return Always NULL.
  */
-static void* __guac_telnet_input_thread(void* data) {
+static void* __guac_tn5250_input_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
 
     char buffer[8192];
     int bytes_read;
 
     /* Write all data read */
-    while ((bytes_read = guac_terminal_read_stdin(telnet_client->term, buffer, sizeof(buffer))) > 0) {
-        telnet_send(telnet_client->telnet, buffer, bytes_read);
-        if (telnet_client->echo_enabled)
-            guac_terminal_write(telnet_client->term, buffer, bytes_read);
+    while ((bytes_read = guac_terminal_read_stdin(tn5250_client->term, buffer, sizeof(buffer))) > 0) {
+        telnet_send(tn5250_client->telnet, buffer, bytes_read);
+        if (tn5250_client->echo_enabled)
+            guac_terminal_write(tn5250_client->term, buffer, bytes_read);
     }
 
     return NULL;
@@ -372,7 +372,7 @@ static void* __guac_telnet_input_thread(void* data) {
  * @return The connected telnet instance, if successful, or NULL if the
  *         connection fails for any reason.
  */
-static telnet_t* __guac_telnet_create_session(guac_client* client) {
+static telnet_t* __guac_tn5250_create_session(guac_client* client) {
 
     int retval;
 
@@ -383,8 +383,8 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
     char connected_address[1024];
     char connected_port[64];
 
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_telnet_settings* settings = telnet_client->settings;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
+    guac_tn5250_settings* settings = tn5250_client->settings;
 
     struct addrinfo hints = {
         .ai_family   = AF_UNSPEC,
@@ -458,7 +458,7 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
     }
 
     /* Save file descriptor */
-    telnet_client->socket_fd = fd;
+    tn5250_client->socket_fd = fd;
 
     return telnet;
 
@@ -471,7 +471,7 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
  * @param telnet The telnet connection to use.
  * @param value The value to send.
  */
-static void __guac_telnet_send_uint16(telnet_t* telnet, uint16_t value) {
+static void __guac_tn5250_send_uint16(telnet_t* telnet, uint16_t value) {
 
     unsigned char buffer[2];
     buffer[0] = (value >> 8) & 0xFF;
@@ -487,32 +487,32 @@ static void __guac_telnet_send_uint16(telnet_t* telnet, uint16_t value) {
  * @param telnet The telnet connection to use.
  * @param value The value to send.
  */
-static void __guac_telnet_send_uint8(telnet_t* telnet, uint8_t value) {
+static void __guac_tn5250_send_uint8(telnet_t* telnet, uint8_t value) {
     telnet_send(telnet, (char*) (&value), 1);
 }
 
-void guac_telnet_send_naws(telnet_t* telnet, uint16_t width, uint16_t height) {
+void guac_tn5250_send_naws(telnet_t* telnet, uint16_t width, uint16_t height) {
     telnet_begin_sb(telnet, TELNET_TELOPT_NAWS);
-    __guac_telnet_send_uint16(telnet, width);
-    __guac_telnet_send_uint16(telnet, height);
+    __guac_tn5250_send_uint16(telnet, width);
+    __guac_tn5250_send_uint16(telnet, height);
     telnet_finish_sb(telnet);
 }
 
-void guac_telnet_send_user(telnet_t* telnet, const char* username) {
+void guac_tn5250_send_user(telnet_t* telnet, const char* username) {
 
     /* IAC SB NEW-ENVIRON IS */
     telnet_begin_sb(telnet, TELNET_TELOPT_NEW_ENVIRON);
-    __guac_telnet_send_uint8(telnet, TELNET_ENVIRON_IS);
+    __guac_tn5250_send_uint8(telnet, TELNET_ENVIRON_IS);
 
     /* Only send username if defined */
     if (username != NULL) {
 
         /* VAR "USER" */
-        __guac_telnet_send_uint8(telnet, TELNET_ENVIRON_VAR);
+        __guac_tn5250_send_uint8(telnet, TELNET_ENVIRON_VAR);
         telnet_send(telnet, "USER", 4);
 
         /* VALUE username */
-        __guac_telnet_send_uint8(telnet, TELNET_ENVIRON_VALUE);
+        __guac_tn5250_send_uint8(telnet, TELNET_ENVIRON_VALUE);
         telnet_send(telnet, username, strlen(username));
 
     }
@@ -531,7 +531,7 @@ void guac_telnet_send_user(telnet_t* telnet, const char* username) {
  * @return A value greater than zero on success, zero on timeout, and
  *         less than zero on error.
  */
-static int __guac_telnet_wait(int socket_fd) {
+static int __guac_tn5250_wait(int socket_fd) {
 
     /* Build array of file descriptors */
     struct pollfd fds[] = {{
@@ -545,11 +545,11 @@ static int __guac_telnet_wait(int socket_fd) {
 
 }
 
-void* guac_telnet_client_thread(void* data) {
+void* guac_tn5250_client_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_telnet_settings* settings = telnet_client->settings;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
+    guac_tn5250_settings* settings = tn5250_client->settings;
 
     pthread_t input_thread;
     char buffer[8192];
@@ -557,7 +557,7 @@ void* guac_telnet_client_thread(void* data) {
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
-        telnet_client->recording = guac_common_recording_create(client,
+        tn5250_client->recording = guac_common_recording_create(client,
                 settings->recording_path,
                 settings->recording_name,
                 settings->create_recording_path,
@@ -567,14 +567,14 @@ void* guac_telnet_client_thread(void* data) {
     }
 
     /* Create terminal */
-    telnet_client->term = guac_terminal_create(client,
-            telnet_client->clipboard, settings->disable_copy,
+    tn5250_client->term = guac_terminal_create(client,
+            tn5250_client->clipboard, settings->disable_copy,
             settings->max_scrollback, settings->font_name, settings->font_size,
             settings->resolution, settings->width, settings->height,
             settings->color_scheme, settings->backspace);
 
     /* Fail if terminal init failed */
-    if (telnet_client->term == NULL) {
+    if (tn5250_client->term == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Terminal initialization failed");
         return NULL;
@@ -582,46 +582,46 @@ void* guac_telnet_client_thread(void* data) {
 
     /* Set up typescript, if requested */
     if (settings->typescript_path != NULL) {
-        guac_terminal_create_typescript(telnet_client->term,
+        guac_terminal_create_typescript(tn5250_client->term,
                 settings->typescript_path,
                 settings->typescript_name,
                 settings->create_typescript_path);
     }
 
     /* Open telnet session */
-    telnet_client->telnet = __guac_telnet_create_session(client);
-    if (telnet_client->telnet == NULL) {
-        /* Already aborted within __guac_telnet_create_session() */
+    tn5250_client->telnet = __guac_tn5250_create_session(client);
+    if (tn5250_client->telnet == NULL) {
+        /* Already aborted within __guac_tn5250_create_session() */
         return NULL;
     }
 
     /* Logged in */
-    guac_client_log(client, GUAC_LOG_INFO, "Telnet connection successful.");
+    guac_client_log(client, GUAC_LOG_INFO, "TN5250 connection successful.");
 
     /* Allow terminal to render if login success/failure detection is not
      * enabled */
     if (settings->login_success_regex == NULL
             && settings->login_failure_regex == NULL)
-        guac_terminal_start(telnet_client->term);
+        guac_terminal_start(tn5250_client->term);
 
     /* Start input thread */
-    if (pthread_create(&(input_thread), NULL, __guac_telnet_input_thread, (void*) client)) {
+    if (pthread_create(&(input_thread), NULL, __guac_tn5250_input_thread, (void*) client)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to start input thread");
         return NULL;
     }
 
     /* While data available, write to terminal */
-    while ((wait_result = __guac_telnet_wait(telnet_client->socket_fd)) >= 0) {
+    while ((wait_result = __guac_tn5250_wait(tn5250_client->socket_fd)) >= 0) {
 
         /* Resume waiting of no data available */
         if (wait_result == 0)
             continue;
 
-        int bytes_read = read(telnet_client->socket_fd, buffer, sizeof(buffer));
+        int bytes_read = read(tn5250_client->socket_fd, buffer, sizeof(buffer));
         if (bytes_read <= 0)
             break;
 
-        telnet_recv(telnet_client->telnet, buffer, bytes_read);
+        telnet_recv(tn5250_client->telnet, buffer, bytes_read);
 
     }
 
@@ -629,7 +629,7 @@ void* guac_telnet_client_thread(void* data) {
     guac_client_stop(client);
     pthread_join(input_thread, NULL);
 
-    guac_client_log(client, GUAC_LOG_INFO, "Telnet connection ended.");
+    guac_client_log(client, GUAC_LOG_INFO, "TN5250 connection ended.");
     return NULL;
 
 }

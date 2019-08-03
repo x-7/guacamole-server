@@ -20,40 +20,40 @@
 #include "config.h"
 #include "clipboard.h"
 #include "common/clipboard.h"
-#include "telnet.h"
+#include "tn5250.h"
 #include "terminal/terminal.h"
 
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
 
-int guac_telnet_clipboard_handler(guac_user* user, guac_stream* stream,
+int guac_tn5250_clipboard_handler(guac_user* user, guac_stream* stream,
         char* mimetype) {
 
     /* Clear clipboard and prepare for new data */
     guac_client* client = user->client;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_common_clipboard_reset(telnet_client->clipboard, mimetype);
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
+    guac_common_clipboard_reset(tn5250_client->clipboard, mimetype);
 
     /* Set handlers for clipboard stream */
-    stream->blob_handler = guac_telnet_clipboard_blob_handler;
-    stream->end_handler = guac_telnet_clipboard_end_handler;
+    stream->blob_handler = guac_tn5250_clipboard_blob_handler;
+    stream->end_handler = guac_tn5250_clipboard_end_handler;
 
     return 0;
 }
 
-int guac_telnet_clipboard_blob_handler(guac_user* user, guac_stream* stream,
+int guac_tn5250_clipboard_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length) {
 
     /* Append new data */
     guac_client* client = user->client;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_common_clipboard_append(telnet_client->clipboard, data, length);
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
+    guac_common_clipboard_append(tn5250_client->clipboard, data, length);
 
     return 0;
 }
 
-int guac_telnet_clipboard_end_handler(guac_user* user, guac_stream* stream) {
+int guac_tn5250_clipboard_end_handler(guac_user* user, guac_stream* stream) {
 
     /* Nothing to do - clipboard is implemented within client */
 

@@ -19,7 +19,7 @@
 
 #include "config.h"
 #include "pipe.h"
-#include "telnet.h"
+#include "tn5250.h"
 #include "terminal/terminal.h"
 
 #include <guacamole/protocol.h>
@@ -28,15 +28,15 @@
 
 #include <string.h>
 
-int guac_telnet_pipe_handler(guac_user* user, guac_stream* stream,
+int guac_tn5250_pipe_handler(guac_user* user, guac_stream* stream,
         char* mimetype, char* name) {
 
     guac_client* client = user->client;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
+    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
 
     /* Redirect STDIN if pipe has required name */
-    if (strcmp(name, GUAC_TELNET_STDIN_PIPE_NAME) == 0) {
-        guac_terminal_send_stream(telnet_client->term, user, stream);
+    if (strcmp(name, GUAC_TN5250_STDIN_PIPE_NAME) == 0) {
+        guac_terminal_send_stream(tn5250_client->term, user, stream);
         return 0;
     }
 

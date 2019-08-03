@@ -27,12 +27,12 @@
 /**
  * Handler for joining users.
  */
-guac_user_join_handler guac_telnet_user_join_handler;
+guac_user_join_handler guac_tn5250_user_join_handler;
 
 /**
  * Handler for leaving users.
  */
-guac_user_leave_handler guac_telnet_user_leave_handler;
+guac_user_leave_handler guac_tn5250_user_leave_handler;
 
 #endif
 

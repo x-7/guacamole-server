@@ -33,6 +33,7 @@
 const char* GUAC_TN5250_CLIENT_ARGS[] = {
     "hostname",
     "port",
+    "ssl",
     "username",
     "username-regex",
     "password",
@@ -60,7 +61,7 @@ const char* GUAC_TN5250_CLIENT_ARGS[] = {
     NULL
 };
 
-enum TELNET_ARGS_IDX {
+enum TN5250_ARGS_IDX {
     
     /**
      * The hostname to connect to. Required.
@@ -71,6 +72,11 @@ enum TELNET_ARGS_IDX {
      * The port to connect to. Optional.
      */
     IDX_PORT,
+    
+    /**
+     * Whether or not to use SSL.  Optional.
+     */
+    IDX_SSL,
 
     /**
      * The name of the user to login as. Optional.
@@ -232,13 +238,13 @@ enum TELNET_ARGS_IDX {
      */
     IDX_DISABLE_PASTE,
 
-    TELNET_ARGS_COUNT
+    TN5250_ARGS_COUNT
 };
 
 /**
  * Compiles the given regular expression, returning NULL if compilation fails
  * or of the given regular expression is NULL. The returned regex_t must be
- * freed with regfree() AND free(), or with guac_telnet_regex_free().
+ * freed with regfree() AND free(), or with guac_tn5250_regex_free().
  *
  * @param user
  *     The user who provided the setting associated with the given regex
@@ -251,7 +257,7 @@ enum TELNET_ARGS_IDX {
  *     The compiled regular expression, or NULL if compilation fails or NULL
  *     was originally provided for the pattern.
  */
-static regex_t* guac_telnet_compile_regex(guac_user* user, char* pattern) {
+static regex_t* guac_tn5250_compile_regex(guac_user* user, char* pattern) {
 
     /* Nothing to compile if no pattern provided */
     if (pattern == NULL)
@@ -275,7 +281,7 @@ static regex_t* guac_telnet_compile_regex(guac_user* user, char* pattern) {
     return regex;
 }
 
-void guac_telnet_regex_free(regex_t** regex) {
+void guac_tn5250_regex_free(regex_t** regex) {
     if (*regex != NULL) {
         regfree(*regex);
         free(*regex);
@@ -283,100 +289,100 @@ void guac_telnet_regex_free(regex_t** regex) {
     }
 }
 
-guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
+guac_tn5250_settings* guac_tn5250_parse_args(guac_user* user,
         int argc, const char** argv) {
 
     /* Validate arg count */
-    if (argc != TELNET_ARGS_COUNT) {
+    if (argc != TN5250_ARGS_COUNT) {
         guac_user_log(user, GUAC_LOG_WARNING, "Incorrect number of connection "
                 "parameters provided: expected %i, got %i.",
-                TELNET_ARGS_COUNT, argc);
+                TN5250_ARGS_COUNT, argc);
         return NULL;
     }
 
-    guac_telnet_settings* settings = calloc(1, sizeof(guac_telnet_settings));
+    guac_tn5250_settings* settings = calloc(1, sizeof(guac_tn5250_settings));
 
-    /* Read parameters */
+    /* Read hostname */
     settings->hostname =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_HOSTNAME, "");
 
     /* Read username */
     settings->username =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_USERNAME, NULL);
 
     /* Read username regex only if username is specified */
     if (settings->username != NULL) {
-        settings->username_regex = guac_telnet_compile_regex(user,
-            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                    IDX_USERNAME_REGEX, GUAC_TELNET_DEFAULT_USERNAME_REGEX));
+        settings->username_regex = guac_tn5250_compile_regex(user,
+            guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
+                    IDX_USERNAME_REGEX, GUAC_TN5250_DEFAULT_USERNAME_REGEX));
     }
 
     /* Read password */
     settings->password =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_PASSWORD, NULL);
 
     /* Read password regex only if password is specified */
     if (settings->password != NULL) {
-        settings->password_regex = guac_telnet_compile_regex(user,
-            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                    IDX_PASSWORD_REGEX, GUAC_TELNET_DEFAULT_PASSWORD_REGEX));
+        settings->password_regex = guac_tn5250_compile_regex(user,
+            guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
+                    IDX_PASSWORD_REGEX, GUAC_TN5250_DEFAULT_PASSWORD_REGEX));
     }
 
     /* Read optional login success detection regex */
-    settings->login_success_regex = guac_telnet_compile_regex(user,
-            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+    settings->login_success_regex = guac_tn5250_compile_regex(user,
+            guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
                     IDX_LOGIN_SUCCESS_REGEX, NULL));
 
     /* Read optional login failure detection regex */
-    settings->login_failure_regex = guac_telnet_compile_regex(user,
-            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+    settings->login_failure_regex = guac_tn5250_compile_regex(user,
+            guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
                     IDX_LOGIN_FAILURE_REGEX, NULL));
 
     /* Both login success and login failure regexes must be provided if either
      * is present at all */
     if (settings->login_success_regex != NULL
             && settings->login_failure_regex == NULL) {
-        guac_telnet_regex_free(&settings->login_success_regex);
+        guac_tn5250_regex_free(&settings->login_success_regex);
         guac_user_log(user, GUAC_LOG_WARNING, "Ignoring provided value for "
                 "\"%s\" as \"%s\" must also be provided.",
-                GUAC_TELNET_CLIENT_ARGS[IDX_LOGIN_SUCCESS_REGEX],
-                GUAC_TELNET_CLIENT_ARGS[IDX_LOGIN_FAILURE_REGEX]);
+                GUAC_TN5250_CLIENT_ARGS[IDX_LOGIN_SUCCESS_REGEX],
+                GUAC_TN5250_CLIENT_ARGS[IDX_LOGIN_FAILURE_REGEX]);
     }
     else if (settings->login_failure_regex != NULL
             && settings->login_success_regex == NULL) {
-        guac_telnet_regex_free(&settings->login_failure_regex);
+        guac_tn5250_regex_free(&settings->login_failure_regex);
         guac_user_log(user, GUAC_LOG_WARNING, "Ignoring provided value for "
                 "\"%s\" as \"%s\" must also be provided.",
-                GUAC_TELNET_CLIENT_ARGS[IDX_LOGIN_FAILURE_REGEX],
-                GUAC_TELNET_CLIENT_ARGS[IDX_LOGIN_SUCCESS_REGEX]);
+                GUAC_TN5250_CLIENT_ARGS[IDX_LOGIN_FAILURE_REGEX],
+                GUAC_TN5250_CLIENT_ARGS[IDX_LOGIN_SUCCESS_REGEX]);
     }
 
     /* Read-only mode */
     settings->read_only =
-        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_boolean(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_READ_ONLY, false);
 
     /* Read maximum scrollback size */
     settings->max_scrollback =
-        guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                IDX_SCROLLBACK, GUAC_TELNET_DEFAULT_MAX_SCROLLBACK);
+        guac_user_parse_args_int(user, GUAC_TN5250_CLIENT_ARGS, argv,
+                IDX_SCROLLBACK, GUAC_TN5250_DEFAULT_MAX_SCROLLBACK);
 
     /* Read font name */
     settings->font_name =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                IDX_FONT_NAME, GUAC_TELNET_DEFAULT_FONT_NAME);
+        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
+                IDX_FONT_NAME, GUAC_TN5250_DEFAULT_FONT_NAME);
 
     /* Read font size */
     settings->font_size =
-        guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                IDX_FONT_SIZE, GUAC_TELNET_DEFAULT_FONT_SIZE);
+        guac_user_parse_args_int(user, GUAC_TN5250_CLIENT_ARGS, argv,
+                IDX_FONT_SIZE, GUAC_TN5250_DEFAULT_FONT_SIZE);
 
     /* Copy requested color scheme */
     settings->color_scheme =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_COLOR_SCHEME, "");
 
     /* Pull width/height/resolution directly from user */
@@ -384,74 +390,84 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
     settings->height     = user->info.optimal_height;
     settings->resolution = user->info.optimal_resolution;
 
+    /* Read SSL */
+    settings->ssl =
+        guac_user_parse_args_boolean(user, GUAC_TN5250_CLIENT_ARGS, argv,
+                IDX_SSL, false);
+    
+    int defualt_port = GUAC_TN5250_DEFAULT_PORT;
+    
+    if (settings->ssl)
+        default_port = GUAC_TN5250_DEFAULT_SSL_PORT;
+    
     /* Read port */
     settings->port =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                IDX_PORT, GUAC_TELNET_DEFAULT_PORT);
+        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
+                IDX_PORT, defualt_port);
 
     /* Read typescript path */
     settings->typescript_path =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_TYPESCRIPT_PATH, NULL);
 
     /* Read typescript name */
     settings->typescript_name =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                IDX_TYPESCRIPT_NAME, GUAC_TELNET_DEFAULT_TYPESCRIPT_NAME);
+        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
+                IDX_TYPESCRIPT_NAME, GUAC_TN5250_DEFAULT_TYPESCRIPT_NAME);
 
     /* Parse path creation flag */
     settings->create_typescript_path =
-        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_boolean(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_CREATE_TYPESCRIPT_PATH, false);
 
     /* Read recording path */
     settings->recording_path =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_RECORDING_PATH, NULL);
 
     /* Read recording name */
     settings->recording_name =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                IDX_RECORDING_NAME, GUAC_TELNET_DEFAULT_RECORDING_NAME);
+        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
+                IDX_RECORDING_NAME, GUAC_TN5250_DEFAULT_RECORDING_NAME);
 
     /* Parse output exclusion flag */
     settings->recording_exclude_output =
-        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_boolean(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_RECORDING_EXCLUDE_OUTPUT, false);
 
     /* Parse mouse exclusion flag */
     settings->recording_exclude_mouse =
-        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_boolean(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_RECORDING_EXCLUDE_MOUSE, false);
 
     /* Parse key event inclusion flag */
     settings->recording_include_keys =
-        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_boolean(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_RECORDING_INCLUDE_KEYS, false);
 
     /* Parse path creation flag */
     settings->create_recording_path =
-        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_boolean(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_CREATE_RECORDING_PATH, false);
 
     /* Parse backspace key code */
     settings->backspace =
-        guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_int(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_BACKSPACE, 127);
 
     /* Read terminal emulator type. */
     settings->terminal_type =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_TERMINAL_TYPE, "linux");
 
     /* Parse clipboard copy disable flag */
     settings->disable_copy =
-        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_boolean(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_DISABLE_COPY, false);
 
     /* Parse clipboard paste disable flag */
     settings->disable_paste =
-        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+        guac_user_parse_args_boolean(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_DISABLE_PASTE, false);
 
     /* Parsing was successful */
@@ -459,7 +475,7 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
 
 }
 
-void guac_telnet_settings_free(guac_telnet_settings* settings) {
+void guac_tn5250_settings_free(guac_tn5250_settings* settings) {
 
     /* Free network connection information */
     free(settings->hostname);
@@ -470,10 +486,10 @@ void guac_telnet_settings_free(guac_telnet_settings* settings) {
     free(settings->password);
 
     /* Free various regexes */
-    guac_telnet_regex_free(&settings->username_regex);
-    guac_telnet_regex_free(&settings->password_regex);
-    guac_telnet_regex_free(&settings->login_success_regex);
-    guac_telnet_regex_free(&settings->login_failure_regex);
+    guac_tn5250_regex_free(&settings->username_regex);
+    guac_tn5250_regex_free(&settings->password_regex);
+    guac_tn5250_regex_free(&settings->login_success_regex);
+    guac_tn5250_regex_free(&settings->login_failure_regex);
 
     /* Free display preferences */
     free(settings->font_name);
