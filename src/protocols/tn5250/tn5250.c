@@ -105,7 +105,10 @@ static void __guac_tn5250_event_handler(telnet_t* telnet, telnet_event_t* event,
 
         /* Data destined for remote end */
         case TELNET_EV_SEND:
-            if (__guac_tn5250_send_sna_packet(client, event))
+            if (__guac_tn5250_send_sna_packet(telnet, event))
+                guac_client_stop(client);
+            if (__guac_tn5250_write_all(tn5250_client->socket_fd, event->data.buffer, event->data.size)
+                    != event->data.size)
                 guac_client_stop(client);
             break;
 
