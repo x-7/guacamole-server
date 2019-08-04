@@ -34,10 +34,7 @@ const char* GUAC_TN5250_CLIENT_ARGS[] = {
     "hostname",
     "port",
     "ssl",
-    "username",
-    "username-regex",
-    "password",
-    "password-regex",
+    "enhanced",
     "font-name",
     "font-size",
     "color-scheme",
@@ -54,8 +51,6 @@ const char* GUAC_TN5250_CLIENT_ARGS[] = {
     "backspace",
     "terminal-type",
     "scrollback",
-    "login-success-regex",
-    "login-failure-regex",
     "disable-copy",
     "disable-paste",
     NULL
@@ -77,29 +72,12 @@ enum TN5250_ARGS_IDX {
      * Whether or not to use SSL.  Optional.
      */
     IDX_SSL,
-
+    
     /**
-     * The name of the user to login as. Optional.
+     * Whether or not to use RFC2877 enhanced TN5250.  Optional.
      */
-    IDX_USERNAME,
-
-    /**
-     * The regular expression to use when searching for the username/login
-     * prompt. Optional.
-     */
-    IDX_USERNAME_REGEX,
-
-    /**
-     * The password to use when logging in. Optional.
-     */
-    IDX_PASSWORD,
-
-    /**
-     * The regular expression to use when searching for the password prompt.
-     * Optional.
-     */
-    IDX_PASSWORD_REGEX,
-
+    IDX_ENHANCED,
+    
     /**
      * The name of the font to use within the terminal.
      */
@@ -207,24 +185,6 @@ enum TN5250_ARGS_IDX {
     IDX_SCROLLBACK,
 
     /**
-     * The regular expression to use when searching for whether login was
-     * successful. This parameter is optional. If given, the
-     * "login-failure-regex" parameter must also be specified, and the first
-     * frame of the Guacamole connection will be withheld until login
-     * success/failure has been determined.
-     */
-    IDX_LOGIN_SUCCESS_REGEX,
-
-    /**
-     * The regular expression to use when searching for whether login was
-     * unsuccessful. This parameter is optional. If given, the
-     * "login-success-regex" parameter must also be specified, and the first
-     * frame of the Guacamole connection will be withheld until login
-     * success/failure has been determined.
-     */
-    IDX_LOGIN_FAILURE_REGEX,
-
-    /**
      * Whether outbound clipboard access should be blocked. If set to "true",
      * it will not be possible to copy data from the terminal to the client
      * using the clipboard. By default, clipboard access is not blocked.
@@ -240,54 +200,6 @@ enum TN5250_ARGS_IDX {
 
     TN5250_ARGS_COUNT
 };
-
-/**
- * Compiles the given regular expression, returning NULL if compilation fails
- * or of the given regular expression is NULL. The returned regex_t must be
- * freed with regfree() AND free(), or with guac_tn5250_regex_free().
- *
- * @param user
- *     The user who provided the setting associated with the given regex
- *     pattern. Error messages will be logged on behalf of this user.
- *
- * @param pattern
- *     The regular expression pattern to compile.
- *
- * @return
- *     The compiled regular expression, or NULL if compilation fails or NULL
- *     was originally provided for the pattern.
- */
-static regex_t* guac_tn5250_compile_regex(guac_user* user, char* pattern) {
-
-    /* Nothing to compile if no pattern provided */
-    if (pattern == NULL)
-        return NULL;
-
-    int compile_result;
-    regex_t* regex = malloc(sizeof(regex_t));
-
-    /* Compile regular expression */
-    compile_result = regcomp(regex, pattern,
-            REG_EXTENDED | REG_NOSUB | REG_ICASE | REG_NEWLINE);
-
-    /* Notify of failure to parse/compile */
-    if (compile_result != 0) {
-        guac_user_log(user, GUAC_LOG_ERROR, "Regular expression '%s' "
-                "could not be compiled.", pattern);
-        free(regex);
-        return NULL;
-    }
-
-    return regex;
-}
-
-void guac_tn5250_regex_free(regex_t** regex) {
-    if (*regex != NULL) {
-        regfree(*regex);
-        free(*regex);
-        *regex = NULL;
-    }
-}
 
 guac_tn5250_settings* guac_tn5250_parse_args(guac_user* user,
         int argc, const char** argv) {
@@ -306,59 +218,6 @@ guac_tn5250_settings* guac_tn5250_parse_args(guac_user* user,
     settings->hostname =
         guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_HOSTNAME, "");
-
-    /* Read username */
-    settings->username =
-        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
-                IDX_USERNAME, NULL);
-
-    /* Read username regex only if username is specified */
-    if (settings->username != NULL) {
-        settings->username_regex = guac_tn5250_compile_regex(user,
-            guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
-                    IDX_USERNAME_REGEX, GUAC_TN5250_DEFAULT_USERNAME_REGEX));
-    }
-
-    /* Read password */
-    settings->password =
-        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
-                IDX_PASSWORD, NULL);
-
-    /* Read password regex only if password is specified */
-    if (settings->password != NULL) {
-        settings->password_regex = guac_tn5250_compile_regex(user,
-            guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
-                    IDX_PASSWORD_REGEX, GUAC_TN5250_DEFAULT_PASSWORD_REGEX));
-    }
-
-    /* Read optional login success detection regex */
-    settings->login_success_regex = guac_tn5250_compile_regex(user,
-            guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
-                    IDX_LOGIN_SUCCESS_REGEX, NULL));
-
-    /* Read optional login failure detection regex */
-    settings->login_failure_regex = guac_tn5250_compile_regex(user,
-            guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
-                    IDX_LOGIN_FAILURE_REGEX, NULL));
-
-    /* Both login success and login failure regexes must be provided if either
-     * is present at all */
-    if (settings->login_success_regex != NULL
-            && settings->login_failure_regex == NULL) {
-        guac_tn5250_regex_free(&settings->login_success_regex);
-        guac_user_log(user, GUAC_LOG_WARNING, "Ignoring provided value for "
-                "\"%s\" as \"%s\" must also be provided.",
-                GUAC_TN5250_CLIENT_ARGS[IDX_LOGIN_SUCCESS_REGEX],
-                GUAC_TN5250_CLIENT_ARGS[IDX_LOGIN_FAILURE_REGEX]);
-    }
-    else if (settings->login_failure_regex != NULL
-            && settings->login_success_regex == NULL) {
-        guac_tn5250_regex_free(&settings->login_failure_regex);
-        guac_user_log(user, GUAC_LOG_WARNING, "Ignoring provided value for "
-                "\"%s\" as \"%s\" must also be provided.",
-                GUAC_TN5250_CLIENT_ARGS[IDX_LOGIN_FAILURE_REGEX],
-                GUAC_TN5250_CLIENT_ARGS[IDX_LOGIN_SUCCESS_REGEX]);
-    }
 
     /* Read-only mode */
     settings->read_only =
@@ -404,6 +263,11 @@ guac_tn5250_settings* guac_tn5250_parse_args(guac_user* user,
     settings->port =
         guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
                 IDX_PORT, defualt_port);
+    
+    /* Enhanced mode */
+    settings->enhanced =
+        guac_user_parse_args_boolean(user, GUAC_TN5250_CLIENT_ARGS, argv,
+                IDX_ENHANCED, false);
 
     /* Read typescript path */
     settings->typescript_path =
@@ -456,9 +320,37 @@ guac_tn5250_settings* guac_tn5250_parse_args(guac_user* user,
                 IDX_BACKSPACE, 127);
 
     /* Read terminal emulator type. */
-    settings->terminal_type =
-        guac_user_parse_args_string(user, GUAC_TN5250_CLIENT_ARGS, argv,
-                IDX_TERMINAL_TYPE, "linux");
+    char* terminal_type = guac_user_parse_args_string(user,
+            GUAC_TN5250_CLIENT_ARGS, argv, IDX_TERMINAL_TYPE, "5251-11");
+    
+    if (strcmp(terminal_type, "3179-2") == 0)
+        settings->terminal_type = IBM_3179_2;
+    else if (strcmp(terminal_type, "3180-2") == 0)
+        settings->terminal_type = IBM_3180_2;
+    else if (strcmp(terminal_type, "3196-a1") == 0)
+        settings->terminal_type = IBM_3196_A1;
+    else if (strcmp(terminal_type, "3477-fc") == 0)
+        settings->terminal_type = IBM_3477_FC;
+    else if (strcmp(terminal_type, "3477-fg") == 0)
+        settings->terminal_type = IBM_3477_FG;
+    else if (strcmp(terminal_type, "5251-11") == 0)
+        settings->terminal_type = IBM_5251_11;
+    else if (strcmp(terminal_type, "5291-1") == 0)
+        settings->terminal_type = IBM_5291_1;
+    else if (strcmp(terminal_type, "5292-2") == 0)
+        settings->terminal_type = IBM_5292_2;
+    else if (strcmp(terminal_type, "5555-b01") == 0)
+        settings->terminal_type = IBM_5555_B01;
+    else if (strcmp(terminal_type, "5555-c01") == 0)
+        settings->terminal_type = IBM_5555_C01;
+    else {
+        guac_user_log(user, GUAC_LOG_WARNING,
+                "Invalid terminal type %s, defaulting to 5251-11",
+                terminal_type);
+        settings->terminal_type = IBM_5251_11;
+    }
+    free(terminal_type);
+    
 
     /* Parse clipboard copy disable flag */
     settings->disable_copy =
@@ -480,16 +372,6 @@ void guac_tn5250_settings_free(guac_tn5250_settings* settings) {
     /* Free network connection information */
     free(settings->hostname);
     free(settings->port);
-
-    /* Free credentials */
-    free(settings->username);
-    free(settings->password);
-
-    /* Free various regexes */
-    guac_tn5250_regex_free(&settings->username_regex);
-    guac_tn5250_regex_free(&settings->password_regex);
-    guac_tn5250_regex_free(&settings->login_success_regex);
-    guac_tn5250_regex_free(&settings->login_failure_regex);
 
     /* Free display preferences */
     free(settings->font_name);

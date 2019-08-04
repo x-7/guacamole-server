@@ -72,30 +72,6 @@ int guac_tn5250_user_key_handler(guac_user* user, int keysym, int pressed) {
     if (term == NULL)
         return 0;
 
-    /* Stop searching for password */
-    if (settings->password_regex != NULL) {
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Stopping password prompt search due to user input.");
-
-        regfree(settings->password_regex);
-        free(settings->password_regex);
-        settings->password_regex = NULL;
-
-    }
-
-    /* Stop searching for username */
-    if (settings->username_regex != NULL) {
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Stopping username prompt search due to user input.");
-
-        regfree(settings->username_regex);
-        free(settings->username_regex);
-        settings->username_regex = NULL;
-
-    }
-
     /* Intercept and handle Pause / Break / Ctrl+0 as "IAC BRK" */
     if (pressed && (
                 keysym == 0xFF13                  /* Pause */

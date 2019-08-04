@@ -1382,6 +1382,7 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/rdp/tests/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
+                 src/protocols/tn5250/Makefile
                  src/protocols/vnc/Makefile])
 AC_OUTPUT
 
@@ -1447,6 +1448,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       RDP ........... ${build_rdp}
       SSH ........... ${build_ssh}
       Telnet ........ ${build_telnet}
+      TN5250 ........ ${build_telnet}
       VNC ........... ${build_vnc}
 
    Services / tools:

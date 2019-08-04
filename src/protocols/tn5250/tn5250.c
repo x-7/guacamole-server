@@ -44,11 +44,13 @@
  */
 static const telnet_telopt_t __telnet_options[] = {
     { TELNET_TELOPT_ECHO,        TELNET_WONT, TELNET_DO   },
-    { TELNET_TELOPT_TTYPE,       TELNET_WILL, TELNET_DONT },
+    { TELNET_TELOPT_TTYPE,       TELNET_WILL, TELNET_DO   },
     { TELNET_TELOPT_COMPRESS2,   TELNET_WONT, TELNET_DO   },
     { TELNET_TELOPT_MSSP,        TELNET_WONT, TELNET_DO   },
-    { TELNET_TELOPT_NAWS,        TELNET_WILL, TELNET_DONT },
+    { TELNET_TELOPT_NAWS,        TELNET_WONT, TELNET_DONT },
     { TELNET_TELOPT_NEW_ENVIRON, TELNET_WILL, TELNET_DONT },
+    { TELNET_TELOPT_EOR,         TELNET_WILL, TELNET_DO   },
+    { TELNET_TELOPT_BINARY,      TELNET_WILL, TELNET_DO   },
     { -1, 0, 0 }
 };
 
@@ -83,181 +85,6 @@ static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
 }
 
 /**
- * Matches the given line against the given regex, returning true and sending
- * the given value if a match is found. An enter keypress is automatically
- * sent after the value is sent.
- *
- * @param client
- *     The guac_client associated with the tn5250 session.
- *
- * @param regex
- *     The regex to search for within the given line buffer.
- *
- * @param value
- *     The string value to send through STDIN of the tn5250 session if a
- *     match is found, or NULL if no value should be sent.
- *
- * @param line_buffer
- *     The line of character data to test.
- *
- * @return
- *     true if a match is found, false otherwise.
- */
-static bool guac_tn5250_regex_exec(guac_client* client, regex_t* regex,
-        const char* value, const char* line_buffer) {
-
-    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
-
-    /* Send value upon match */
-    if (regexec(regex, line_buffer, 0, NULL, 0) == 0) {
-
-        /* Send value */
-        if (value != NULL) {
-            guac_terminal_send_string(tn5250_client->term, value);
-            guac_terminal_send_string(tn5250_client->term, "\x0D");
-        }
-
-        /* Stop searching for prompt */
-        return true;
-
-    }
-
-    return false;
-
-}
-
-/**
- * Matches the given line against the various stored regexes, automatically
- * sending the configured username, password, or reporting login
- * success/failure depending on context. If no search is in progress, either
- * because no regexes have been defined or because all applicable searches have
- * completed, this function has no effect.
- *
- * @param client
- *     The guac_client associated with the tn5250 session.
- *
- * @param line_buffer
- *     The line of character data to test.
- */
-static void guac_tn5250_search_line(guac_client* client, const char* line_buffer) {
-
-    guac_tn5250_client* tn5250_client = (guac_tn5250_client*) client->data;
-    guac_tn5250_settings* settings = tn5250_client->settings;
-
-    /* Continue search for username prompt */
-    if (settings->username_regex != NULL) {
-        if (guac_tn5250_regex_exec(client, settings->username_regex,
-                    settings->username, line_buffer)) {
-            guac_client_log(client, GUAC_LOG_DEBUG, "Username sent");
-            guac_tn5250_regex_free(&settings->username_regex);
-        }
-    }
-
-    /* Continue search for password prompt */
-    if (settings->password_regex != NULL) {
-        if (guac_tn5250_regex_exec(client, settings->password_regex,
-                    settings->password, line_buffer)) {
-
-            guac_client_log(client, GUAC_LOG_DEBUG, "Password sent");
-
-            /* Do not continue searching for username/password once password is sent */
-            guac_tn5250_regex_free(&settings->username_regex);
-            guac_tn5250_regex_free(&settings->password_regex);
-
-        }
-    }
-
-    /* Continue search for login success */
-    if (settings->login_success_regex != NULL) {
-        if (guac_tn5250_regex_exec(client, settings->login_success_regex,
-                    NULL, line_buffer)) {
-
-            /* Allow terminal to render now that login has been deemed successful */
-            guac_client_log(client, GUAC_LOG_DEBUG, "Login successful");
-            guac_terminal_start(tn5250_client->term);
-
-            /* Stop all searches */
-            guac_tn5250_regex_free(&settings->username_regex);
-            guac_tn5250_regex_free(&settings->password_regex);
-            guac_tn5250_regex_free(&settings->login_success_regex);
-            guac_tn5250_regex_free(&settings->login_failure_regex);
-
-        }
-    }
-
-    /* Continue search for login failure */
-    if (settings->login_failure_regex != NULL) {
-        if (guac_tn5250_regex_exec(client, settings->login_failure_regex,
-                    NULL, line_buffer)) {
-
-            /* Advise that login has failed and connection should be closed */
-            guac_client_abort(client,
-                    GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-                    "Login failed");
-
-            /* Stop all searches */
-            guac_tn5250_regex_free(&settings->username_regex);
-            guac_tn5250_regex_free(&settings->password_regex);
-            guac_tn5250_regex_free(&settings->login_success_regex);
-            guac_tn5250_regex_free(&settings->login_failure_regex);
-
-        }
-    }
-
-}
-
-/**
- * Searches for a line matching the various stored regexes, automatically
- * sending the configured username, password, or reporting login
- * success/failure depending on context. If no search is in progress, either
- * because no regexes have been defined or because all applicable searches
- * have completed, this function has no effect.
- *
- * @param client
- *     The guac_client associated with the tn5250 session.
- *
- * @param buffer
- *     The buffer of received data to search through.
- *
- * @param size
- *     The size of the given buffer, in bytes.
- */
-static void guac_tn5250_search(guac_client* client, const char* buffer, int size) {
-
-    static char line_buffer[1024] = {0};
-    static int length = 0;
-
-    /* Append all characters in buffer to current line */
-    const char* current = buffer;
-    for (int i = 0; i < size; i++) {
-
-        char c = *(current++);
-
-        /* Attempt pattern match and clear buffer upon reading newline */
-        if (c == '\n') {
-            if (length > 0) {
-                line_buffer[length] = '\0';
-                guac_tn5250_search_line(client, line_buffer);
-                length = 0;
-            }
-        }
-
-        /* Append all non-newline characters to line buffer as long as space
-         * remains */
-        else if (length < sizeof(line_buffer) - 1)
-            line_buffer[length++] = c;
-
-    }
-
-    /* Attempt pattern match if an unfinished line remains (may be a prompt) */
-    if (length > 0) {
-        line_buffer[length] = '\0';
-        guac_tn5250_search_line(client, line_buffer);
-    }
-
-}
-
-/**
  * Event handler, as defined by libtelnet. This function is passed to
  * telnet_init() and will be called for every event fired by libtelnet,
  * including feature enable/disable and receipt/transmission of data.
@@ -272,46 +99,52 @@ static void __guac_tn5250_event_handler(telnet_t* telnet, telnet_event_t* event,
 
         /* Terminal output received */
         case TELNET_EV_DATA:
-            guac_terminal_write(tn5250_client->term, event->data.buffer, event->data.size);
-            guac_tn5250_search(client, event->data.buffer, event->data.size);
+            __guac_tn5250_recv_sna_packet(client, event);
+            // guac_terminal_write(tn5250_client->term, event->data.buffer, event->data.size);
             break;
 
         /* Data destined for remote end */
         case TELNET_EV_SEND:
-            if (__guac_tn5250_write_all(tn5250_client->socket_fd, event->data.buffer, event->data.size)
-                    != event->data.size)
+            if (__guac_tn5250_send_sna_packet(client, event))
                 guac_client_stop(client);
             break;
 
         /* Remote feature enabled */
         case TELNET_EV_WILL:
+            guac_client_log(client, GUAC_LOG_DEBUG, "Received TELNET_EV_WILL "
+                    "for option %d", event->neg.telopt);
             if (event->neg.telopt == TELNET_TELOPT_ECHO)
                 tn5250_client->echo_enabled = 0; /* Disable local echo, as remote will echo */
             break;
 
         /* Remote feature disabled */
         case TELNET_EV_WONT:
+            guac_client_log(client, GUAC_LOG_DEBUG, "Received TELNET_EV_WONT "
+                    "for option %d", event->neg.telopt);
             if (event->neg.telopt == TELNET_TELOPT_ECHO)
                 tn5250_client->echo_enabled = 1; /* Enable local echo, as remote won't echo */
             break;
 
         /* Local feature enable */
         case TELNET_EV_DO:
-            if (event->neg.telopt == TELNET_TELOPT_NAWS) {
-                tn5250_client->naws_enabled = 1;
-                guac_tn5250_send_naws(telnet, tn5250_client->term->term_width, tn5250_client->term->term_height);
-            }
+            guac_client_log(client, GUAC_LOG_DEBUG, "Received TELNET_EV_DO "
+                    "for option %d", event->neg.telopt);
             break;
 
         /* Terminal type request */
         case TELNET_EV_TTYPE:
+            guac_client_log(client, GUAC_LOG_DEBUG, "Received TELNET_EV_TTYPE "
+                    "for command %d", event->ttype.cmd);
             if (event->ttype.cmd == TELNET_TTYPE_SEND)
-                tn5250_ttype_is(tn5250_client->telnet, settings->terminal_type);
+                tn5250_ttype_is(tn5250_client->telnet, __guac_tn5250_terminals[settings->terminal_type].terminal);
             break;
 
         /* Environment request */
         case TELNET_EV_ENVIRON:
 
+            guac_client_log(client, GUAC_LOG_DEBUG, "Received TELNET_EV_ENVIRON "
+                    "for size %d", event->environ.size);
+            
             /* Only send USER if entire environment was requested */
             if (event->environ.size == 0)
                 guac_tn5250_send_user(telnet, settings->username);
@@ -485,6 +318,7 @@ static void __guac_tn5250_send_uint16(telnet_t* telnet, uint16_t value) {
  * Sends an 8-bit value over the given telnet connection.
  *
  * @param telnet The telnet connection to use.
+ * 
  * @param value The value to send.
  */
 static void __guac_tn5250_send_uint8(telnet_t* telnet, uint8_t value) {
@@ -528,6 +362,7 @@ void guac_tn5250_send_user(telnet_t* telnet, const char* username) {
  * error, and > 0 on success.
  *
  * @param socket_fd The file descriptor to wait for.
+ * 
  * @return A value greater than zero on success, zero on timeout, and
  *         less than zero on error.
  */
@@ -579,6 +414,10 @@ void* guac_tn5250_client_thread(void* data) {
                 "Terminal initialization failed");
         return NULL;
     }
+    
+    /* Fix terminal width/height */
+    tn5250_client->term.term_width = __guac_tn5250_terminals[settings->terminal_type].cols;
+    tn5250_client->term.term_height = __guac_tn5250_terminals[settings->terminal_type].rows;
 
     /* Set up typescript, if requested */
     if (settings->typescript_path != NULL) {
@@ -598,11 +437,8 @@ void* guac_tn5250_client_thread(void* data) {
     /* Logged in */
     guac_client_log(client, GUAC_LOG_INFO, "TN5250 connection successful.");
 
-    /* Allow terminal to render if login success/failure detection is not
-     * enabled */
-    if (settings->login_success_regex == NULL
-            && settings->login_failure_regex == NULL)
-        guac_terminal_start(tn5250_client->term);
+    /* Allow terminal to render */
+    guac_terminal_start(tn5250_client->term);
 
     /* Start input thread */
     if (pthread_create(&(input_thread), NULL, __guac_tn5250_input_thread, (void*) client)) {
@@ -632,5 +468,15 @@ void* guac_tn5250_client_thread(void* data) {
     guac_client_log(client, GUAC_LOG_INFO, "TN5250 connection ended.");
     return NULL;
 
+}
+
+void __guac_tn5250_send_sna_packet(void* data, tn5250_flags flags,
+        unsigned char opcode, char* data) {
+    
+}
+
+void __guac_tn5250_recv_sna_packet(guac_client* client, telnet_event_t* event) {
+    
+    
 }
 

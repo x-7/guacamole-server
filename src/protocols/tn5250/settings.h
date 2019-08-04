@@ -62,18 +62,6 @@
 #define GUAC_TN5250_DEFAULT_RECORDING_NAME "recording"
 
 /**
- * The regular expression to use when searching for the username/login prompt
- * if no other regular expression is specified.
- */
-#define GUAC_TN5250_DEFAULT_USERNAME_REGEX "[Ll]ogin:"
-
-/**
- * The regular expression to use when searching for the password prompt if no
- * other regular expression is specified.
- */
-#define GUAC_TN5250_DEFAULT_PASSWORD_REGEX "[Pp]assword:"
-
-/**
  * The default maximum scrollback size in rows.
  */
 #define GUAC_TN5250_DEFAULT_MAX_SCROLLBACK 1000
@@ -136,12 +124,16 @@ typedef enum guac_tn5250_terminal_types {
     
 } guac_tn5250_terminal_type;
 
+/**
+ * Data structure to store all of the characteristics of various types of
+ * 5250-compatible terminals.
+ */
 typedef struct __guac_tn5250_terminal_params {
     
     /**
      * The type of terminal, as defined in RFC-1205
      */
-    guac_tn5250_terminal_type terminal;
+    char* terminal;
     
     /**
      * The number of rows in the terminal
@@ -160,19 +152,24 @@ typedef struct __guac_tn5250_terminal_params {
     
 } __guac_tn5250_terminal_params;
 
+/**
+ * An array of all of the possible terminal types, including the ENUM value,
+ * the height (in rows) and width (in columns), and whether or not the terminal
+ * supports color (true if color, false if monochrome).
+ */
 __guac_tn5250_terminal_params __guac_tn5250_terminals[] = {
-    {IBM_3179_2,   24, 80,  true },
-    {IBM_3180_2,   27, 132, false},
-    {IBM_3196_A1,  24, 80,  false},
-    {IBM_3477_FC,  27, 132, true },
-    {IBM_3477_FG,  27, 132, false},
-    {IBM_5251_11,  24, 80,  false},
-    {IBM_5291_1,   24, 80,  false},
-    {IBM_5292_2,   24, 80,  true },
-    {IBM_5555_B01, 24, 80,  false},
-    {IBM_5555_C01, 24, 80,  true },
+    {"IBM_3179_2",   24, 80,  true },
+    {"IBM_3180_2",   27, 132, false},
+    {"IBM_3196_A1",  24, 80,  false},
+    {"IBM_3477_FC",  27, 132, true },
+    {"IBM_3477_FG",  27, 132, false},
+    {"IBM_5251_11",  24, 80,  false},
+    {"IBM_5291_1",   24, 80,  false},
+    {"IBM_5292_2",   24, 80,  true },
+    {"IBM_5555_B01", 24, 80,  false},
+    {"IBM_5555_C01", 24, 80,  true },
     {NULL,         -1, -1,  false}
-}
+};
 
 /**
  * Settings for the TN5250 connection. The values for this structure are parsed
@@ -195,48 +192,11 @@ typedef struct guac_tn5250_settings {
      * Whether or not to use SSL.
      */
     bool ssl;
-
+    
     /**
-     * The name of the user to login as, if any. If no username is specified,
-     * this will be NULL.
+     * Whether or not to use enhanced TN5250 mode (RFC2877)
      */
-    char* username;
-
-    /**
-     * The regular expression to use when searching for the username/login
-     * prompt. If no username is specified, this will be NULL. If a username
-     * is specified, this will either be the specified username regex, or the
-     * default username regex.
-     */
-    regex_t* username_regex;
-
-    /**
-     * The password to give when authenticating, if any. If no password is
-     * specified, this will be NULL.
-     */
-    char* password;
-
-    /**
-     * The regular expression to use when searching for the password prompt. If
-     * no password is specified, this will be NULL. If a password is specified,
-     * this will either be the specified password regex, or the default
-     * password regex.
-     */
-    regex_t* password_regex;
-
-    /**
-     * The regular expression to use when searching for whether login was
-     * successful. If no such regex is specified, or if no login failure regex
-     * was specified, this will be NULL.
-     */
-    regex_t* login_success_regex;
-
-    /**
-     * The regular expression to use when searching for whether login failed.
-     * If no such regex is specified, or if no login success regex was
-     * specified, this will be NULL.
-     */
-    regex_t* login_failure_regex;
+    bool enhanced;
 
     /**
      * Whether this connection is read-only, and user input should be dropped.
