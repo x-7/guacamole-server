@@ -824,6 +824,18 @@ int guac_terminal_write(guac_terminal* term, const char* c, int size);
 
 /**
  * Sets the character at the given row and column to the specified value.
+ * 
+ * @param term
+ *     The guac_terminal to manipulate.
+ * 
+ * @param row
+ *     The row on which the character is located.
+ * 
+ * @param col
+ *     THe column in which the character is located.
+ * 
+ * @param codepoint
+ *     The value to set.
  */
 int guac_terminal_set(guac_terminal* term, int row, int col, int codepoint);
 

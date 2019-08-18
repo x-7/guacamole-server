@@ -37,23 +37,23 @@
 typedef struct guac_tn5250_client {
 
     /**
-     * Telnet connection settings.
+     * TN5250 connection settings.
      */
     guac_tn5250_settings* settings;
 
     /**
-     * The telnet client thread.
+     * The tn5250 client thread.
      */
     pthread_t client_thread;
 
     /**
-     * The file descriptor of the socket connected to the telnet server,
+     * The file descriptor of the socket connected to the tn5250 server,
      * or -1 if no connection has been established.
      */
     int socket_fd;
 
     /**
-     * Telnet connection, used by the telnet client thread.
+     * telnet connection, used by the tn5250 client thread.
      */
     telnet_t* telnet;
 
@@ -74,7 +74,7 @@ typedef struct guac_tn5250_client {
     guac_common_clipboard* clipboard;
 
     /**
-     * The terminal which will render all output from the telnet client.
+     * The terminal which will render all output from the tn5250 client.
      */
     guac_terminal* term;
 
@@ -86,20 +86,23 @@ typedef struct guac_tn5250_client {
 
 } guac_tn5250_client;
 
+/**
+ * Possible Opcodes that can be sent by the mainframe or the client.
+ */
 unsigned char tn5250_opcodes[] = {
-    0x00, /* No operation */
-    0x01, /* Invite */
-    0x02, /* Output only */
-    0x03, /* Put/Get */
-    0x04, /* Save screen */
-    0x05, /* Restore screen */
-    0x06, /* Read immediate */
+    OPCODE_NOOP, /* No operation */
+    OPCODE_INVITE, /* Invite */
+    OPCODE_OUTPUT, /* Output only */
+    OPCODE_PUT_GET, /* Put/Get */
+    OPCODE_SAVE_SCREEN, /* Save screen */
+    OPCODE_RESTORE_SCREEN, /* Restore screen */
+    OPCODE_READ_IMMEDIATE, /* Read immediate */
     0x07, /* Reserved */
-    0x08, /* Read screen */
+    OPCODE_READ_SCREEN, /* Read screen */
     0x09, /* Reserved */
-    0x0a, /* Cancel invite */
-    0x0b, /* Turn on message light */
-    0x0c, /* Turn off message light */
+    OPCODE_CANCEL_INVITE, /* Cancel invite */
+    OPCODE_MSG_ON, /* Turn on message light */
+    OPCODE_MSG_OFF, /* Turn off message light */
     NULL
 } 
 

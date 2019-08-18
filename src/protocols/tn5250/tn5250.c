@@ -40,7 +40,8 @@
 
 /**
  * Support levels for various telnet options, required for connection
- * negotiation by telnet_init(), part of libtelnet.
+ * negotiation by telnet_init(), part of libtelnet.  The TN5250 specification
+ * requires at EOR, BINARY, and TTYPE.
  */
 static const telnet_telopt_t __telnet_options[] = {
     { TELNET_TELOPT_ECHO,        TELNET_WONT, TELNET_DO   },
@@ -55,6 +56,7 @@ static const telnet_telopt_t __telnet_options[] = {
 };
 
 /**
+ * ***Should be abstracted to common telnet support.***
  * Write the entire buffer given to the specified file descriptor, retrying
  * the write automatically if necessary. This function will return a value
  * not equal to the buffer's size iff an error occurs which prevents all
@@ -74,7 +76,7 @@ static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
         if (ret_val <= 0)
             return -1;
 
-        /* If successful, contine with what data remains (if any) */
+        /* If successful, continue with what data remains (if any) */
         remaining -= ret_val;
         buffer += ret_val;
 
@@ -201,6 +203,7 @@ static void* __guac_tn5250_input_thread(void* data) {
 }
 
 /**
+ * ***Abstract to common telnet code.***
  * Connects to the telnet server specified within the data associated
  * with the given guac_client, which will have been populated by
  * guac_client_init.
@@ -328,13 +331,6 @@ static void __guac_tn5250_send_uint8(telnet_t* telnet, uint8_t value) {
     telnet_send(telnet, (char*) (&value), 1);
 }
 
-void guac_tn5250_send_naws(telnet_t* telnet, uint16_t width, uint16_t height) {
-    telnet_begin_sb(telnet, TELNET_TELOPT_NAWS);
-    __guac_tn5250_send_uint16(telnet, width);
-    __guac_tn5250_send_uint16(telnet, height);
-    telnet_finish_sb(telnet);
-}
-
 void guac_tn5250_send_user(telnet_t* telnet, const char* username) {
 
     /* IAC SB NEW-ENVIRON IS */
@@ -404,6 +400,8 @@ void* guac_tn5250_client_thread(void* data) {
                 settings->recording_include_keys);
     }
 
+    /* Calculate required terminal size based on type. */
+    
     /* Create terminal */
     tn5250_client->term = guac_terminal_create(client,
             tn5250_client->clipboard, settings->disable_copy,
@@ -476,10 +474,83 @@ void* guac_tn5250_client_thread(void* data) {
 void __guac_tn5250_send_sna_packet(void* data, tn5250_flags flags,
         unsigned char opcode, char* data) {
     
+    /**
+     * Things to do, here:
+     * - Put the TN5250 header on
+     * - Set any flags
+     * - Set the Opcode
+     * - Write data
+     * - Write EOR
+     */
+    
+    
 }
 
 void __guac_tn5250_recv_sna_packet(guac_client* client, telnet_event_t* event) {
     
+    /**
+     * Things to do, here:
+     * - Check for TN5250 header
+     * - Take off flags and process
+     * - Examine Opcode and handle (switch)
+     * - Read data and handle it (while)
+     * - Look for EOR (while)
+     */
+    
+    /* Look for TN5250 header - abort if not found. */
+    
+    /* Grab flags */
+    
+    /* Process Opcode */
+    switch (opcode) {
+        
+        case OPCODE_NOOP:
+            
+            break;
+            
+        case OPCODE_INVITE:
+            
+            break;
+            
+        case OPCODE_OUTPUT:
+            
+            break;
+            
+        case OPCODE_PUT_GET:
+            
+            break;
+            
+        case OPCODE_SAVE_SCREEN:
+            
+            break;
+            
+        case OPCODE_RESTORE_SCREEN:
+            
+            break;
+            
+        case OPCODE_READ_IMMEDIATE:
+            
+            break:
+            
+        case OPCODE_READ_SCREEN:
+            
+            break;
+            
+        case OPCODE_CANCEL_INVITE:
+            
+            break;
+            
+        case OPCODE_MSG_ON:
+            
+            break;
+            
+        case OPCODE_MSG_OFF:
+            
+            break;
+            
+        default:
+            
+    }
     
 }
 

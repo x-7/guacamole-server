@@ -126,6 +126,10 @@ struct sna_flags {
     
 } sna_flags;
 
+/**
+ * Defines the structure of a TN5250 (SNA over Telnet) packet, including
+ * the fields and the length of each field, as described in RFC1205.
+ */
 struct sna_packet {
     
     /**
