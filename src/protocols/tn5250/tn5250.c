@@ -552,5 +552,10 @@ void __guac_tn5250_recv_sna_packet(guac_client* client, telnet_event_t* event) {
             
     }
     
+    /* Process data until we get the EOR option */
+    while (packet[i] != TELNET_TELOPT_EOR) {
+        
+    }
+    
 }
 
