@@ -36,11 +36,8 @@ void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
     guac_rdpsnd_pdu_header header;
 
     /* Check that we at least have a header. */
-    if (Stream_GetRemainingLength(input_stream) < sizeof(header)) {
-        guac_client_log(svc->client, GUAC_LOG_WARNING,
-                "Not enough bytes to process sound header.");
+    if (Stream_GetRemainingLength(input_stream) < 4)
         return;
-    }
     
     /* Read RDPSND PDU header */
     Stream_Read_UINT8(input_stream, header.message_type);
@@ -48,15 +45,8 @@ void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
     Stream_Read_UINT16(input_stream, header.body_size);
     
     /* Check that the body_size actually exists in the input stream. */
-    if (Stream_GetRemainingLength(input_stream) < header.body_size) {
-        guac_client_log(svc->client, GUAC_LOG_WARNING, 
-                "Not enough bytes to process sound body.");
-        guac_client_log(svc->client, GUAC_LOG_DEBUG,
-                "Input bytes: %d, Body size: %d",
-                Stream_GetRemainingLength(input_stream),
-                header.body_size);
+    if (Stream_GetRemainingLength(input_stream) < header.body_size)
         return;
-    }
 
     /* 
      * If next PDU is SNDWAVE (due to receiving WaveInfo PDU previously),
