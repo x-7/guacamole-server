@@ -441,7 +441,8 @@ void guac_rdpdr_fs_process_query_directory(guac_rdp_common_svc* svc,
     /* If this is the first query, the path is included after padding */
     if (initial_query) {
 
-        if (Stream_GetRemainingLength(input_stream) < 23);
+        if (Stream_GetRemainingLength(input_stream) < 23)
+            return;
         
         Stream_Seek(input_stream, 23);       /* Padding */
 
