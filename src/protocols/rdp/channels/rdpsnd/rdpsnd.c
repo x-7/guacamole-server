@@ -44,8 +44,13 @@ void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
     Stream_Seek_UINT8(input_stream);
     Stream_Read_UINT16(input_stream, header.body_size);
     
-    if (Stream_GetRemainingLength(input_stream) < header.body_size)
+    if (Stream_GetRemainingLength(input_stream) < header.body_size) {
+        guac_client_debug(svc->client, GUAC_LOG_DEBUG, "Not enough bytes in stream."
+                "  Remaining: %d, Body size: %d",
+                Stream_GetRemainingLength(input_stream),
+                header.body_size);
         return;
+    }
     
     /* 
      * If next PDU is SNDWAVE (due to receiving WaveInfo PDU previously),
