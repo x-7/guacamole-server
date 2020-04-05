@@ -39,6 +39,10 @@
 static void guac_rdp_ai_read_format(wStream* stream,
         guac_rdp_ai_format* format) {
 
+    /* Bail out if the stream doesn't contain enough data. */
+    if (Stream_GetRemainingLength(stream) < (18 + format->data_size))
+        return;
+    
     /* Read audio format into structure */
     Stream_Read_UINT16(stream, format->tag); /* wFormatTag */
     Stream_Read_UINT16(stream, format->channels); /* nChannels */
@@ -262,6 +266,10 @@ void guac_rdp_ai_process_formats(guac_client* client,
     Stream_Read_UINT32(stream, num_formats); /* NumFormats */
     Stream_Seek_UINT32(stream); /* cbSizeFormatsPacket (MUST BE IGNORED) */
 
+    /* Check amount of data. */
+    if (Stream_GetRemainingLength(stream) < (8 + nnum_formats))
+        return;
+    
     UINT32 index;
     for (index = 0; index < num_formats; index++) {
 

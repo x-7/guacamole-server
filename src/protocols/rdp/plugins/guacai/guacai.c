@@ -56,6 +56,10 @@ static void guac_rdp_ai_handle_data(guac_client* client,
     BYTE message_id;
     Stream_Read_UINT8(stream, message_id);
 
+    /* If not enough data, bail out. */
+    if (Stream_GetRemainingLength(stream) < 1)
+        return;
+    
     /* Invoke appropriate message processor based on ID */
     switch (message_id) {
 

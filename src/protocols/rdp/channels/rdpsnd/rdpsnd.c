@@ -35,9 +35,14 @@ void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
     guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
     guac_rdpsnd_pdu_header header;
 
+    /* Check size prior to trying to read data. */
+    if (Stream_GetRemainingLength(input_stream) < (sizeof(header) + header.body_size))
+        return;
+    
     /* Read RDPSND PDU header */
     Stream_Read_UINT8(input_stream, header.message_type);
     Stream_Seek_UINT8(input_stream);
+    
     Stream_Read_UINT16(input_stream, header.body_size);
 
     /* 
