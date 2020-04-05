@@ -35,15 +35,18 @@ void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
     guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
     guac_rdpsnd_pdu_header header;
 
-    /* Check size prior to trying to read data. */
-    if (Stream_GetRemainingLength(input_stream) < (sizeof(header) + header.body_size))
+    /* Check that we at least have a header. */
+    if (Stream_GetRemainingLength(input_stream) < sizeof(header))
         return;
     
     /* Read RDPSND PDU header */
     Stream_Read_UINT8(input_stream, header.message_type);
     Stream_Seek_UINT8(input_stream);
-    
     Stream_Read_UINT16(input_stream, header.body_size);
+    
+    /* Check that the body_size actually exists in the input stream. */
+    if (Stream_GetRemainingLength(input_stream) < header.body_size)
+        return;
 
     /* 
      * If next PDU is SNDWAVE (due to receiving WaveInfo PDU previously),

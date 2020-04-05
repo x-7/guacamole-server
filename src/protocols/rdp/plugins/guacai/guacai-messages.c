@@ -267,7 +267,7 @@ void guac_rdp_ai_process_formats(guac_client* client,
     Stream_Seek_UINT32(stream); /* cbSizeFormatsPacket (MUST BE IGNORED) */
 
     /* Check amount of data. */
-    if (Stream_GetRemainingLength(stream) < (8 + nnum_formats))
+    if (Stream_GetRemainingLength(stream) < (8 + num_formats))
         return;
     
     UINT32 index;
