@@ -51,6 +51,10 @@ void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
     if (Stream_GetRemainingLength(input_stream) < header.body_size) {
         guac_client_log(svc->client, GUAC_LOG_WARNING, 
                 "Not enough bytes to process sound body.");
+        guac_client_log(svc->client, GUAC_LOG_DEBUG,
+                "Input bytes: %d, Body size: %d",
+                Stream_GetRemainingLength(input_stream),
+                header.body_size);
         return;
     }
 
