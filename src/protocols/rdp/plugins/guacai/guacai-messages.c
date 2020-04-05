@@ -268,7 +268,8 @@ void guac_rdp_ai_process_formats(guac_client* client,
 
     /* Check amount of data. */
     if (Stream_GetRemainingLength(stream) < (8 + num_formats)) {
-        guac_client_log(client, "Not enough bytes to process supported sound formats.");
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Not enough bytes to process supported sound formats.");
         return;
     }
     
