@@ -57,8 +57,10 @@ static void guac_rdp_ai_handle_data(guac_client* client,
     Stream_Read_UINT8(stream, message_id);
 
     /* If not enough data, bail out. */
-    if (Stream_GetRemainingLength(stream) < 1)
+    if (Stream_GetRemainingLength(stream) < 1) {
+        guac_client_log(client, "Not enough data in stream for incoming audio.");
         return;
+    }
     
     /* Invoke appropriate message processor based on ID */
     switch (message_id) {
