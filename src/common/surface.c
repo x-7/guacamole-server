@@ -1219,10 +1219,14 @@ guac_common_surface* guac_common_surface_alloc(guac_client* client,
     /* Create corresponding Cairo surface */
     surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, w);
     surface->buffer = calloc(h, surface->stride);
+    if (surface->buffer == NULL)
+        return NULL;
 
     /* Create corresponding heat map */
     surface->heat_map = calloc(heat_width * heat_height,
             sizeof(guac_common_surface_heat_cell));
+	if (surface->heat_map == NULL)
+        return NULL;
 
     /* Reset clipping rect */
     guac_common_surface_reset_clip(surface);
@@ -1286,6 +1290,8 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
     surface->height = h;
     surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, w);
     surface->buffer = calloc(h, surface->stride);
+    if (surface->buffer == NULL)
+        return NULL;
     __guac_common_bound_rect(surface, &surface->clip_rect, NULL, NULL);
 
     /* Copy relevant old data */
@@ -1299,6 +1305,8 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
     free(surface->heat_map);
     surface->heat_map = calloc(heat_width * heat_height,
             sizeof(guac_common_surface_heat_cell));
+    if (surface->heat_map == NULL)
+        return NULL;
 
     /* Resize dirty rect to fit new surface dimensions */
     if (surface->dirty) {
