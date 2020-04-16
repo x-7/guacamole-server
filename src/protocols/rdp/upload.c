@@ -49,7 +49,7 @@ static void __generate_upload_path(const char* filename, char* path) {
     /* Add initial backslash */
     *(path++) = '\\';
 
-    for (i=1; i<GUAC_RDP_FS_MAX_PATH; i++) {
+    for (i=1; i<i(GUAC_RDP_FS_MAX_PATH - 1); i++) {
 
         /* Get current, stop at end */
         char c = *(filename++);
