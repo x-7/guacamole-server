@@ -70,6 +70,8 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
     /* Init Cairo buffer */
     stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
     buffer = malloc(h*stride);
+    if (buffer == NULL)
+        return;
     buffer_row_current = buffer;
 
     bpp = client->format.bitsPerPixel/8;
