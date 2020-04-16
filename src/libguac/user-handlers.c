@@ -459,6 +459,10 @@ int __guac_handle_ack(guac_user* user, int argc, char** argv) {
 
 int __guac_handle_blob(guac_user* user, int argc, char** argv) {
 
+    /* Fail if we have less than two arguments. */
+    if (argc < 2)
+        return 0;
+
     int stream_index = atoi(argv[0]);
     guac_stream* stream = __get_open_input_stream(user, stream_index);
 
