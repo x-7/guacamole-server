@@ -250,7 +250,7 @@ void guac_rdpsnd_wave_info_handler(guac_rdp_common_svc* svc,
     rdpsnd->next_pdu_is_wave = TRUE;
 
     /* Reset audio stream if format has changed */
-    if (audio != NULL)
+    if (audio != NULL && format < GUAC_RDP_MAX_FORMATS)
         guac_audio_stream_reset(audio, NULL,
                 rdpsnd->formats[format].rate,
                 rdpsnd->formats[format].channels,
