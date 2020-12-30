@@ -35,15 +35,17 @@ DIST_SUBDIRS =               \
     src/guacenc              \
     src/guaclog              \
     src/pulse                \
+    src/protocols/ball       \
     src/protocols/kubernetes \
     src/protocols/rdp        \
     src/protocols/ssh        \
     src/protocols/telnet     \
     src/protocols/vnc
 
-SUBDIRS =        \
-    src/libguac  \
-    src/common
+SUBDIRS =              \
+    src/libguac        \
+    src/common         \
+    src/protocols/ball
 
 if ENABLE_COMMON_SSH
 SUBDIRS += src/common-ssh

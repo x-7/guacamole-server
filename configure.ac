@@ -1140,6 +1140,7 @@ AC_CONFIG_FILES([Makefile
                  src/guaclog/Makefile
                  src/guaclog/man/guaclog.1
                  src/pulse/Makefile
+                 src/protocols/ball/Makefile
                  src/protocols/kubernetes/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/rdp/tests/Makefile
