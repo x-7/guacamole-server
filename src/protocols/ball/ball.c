@@ -25,9 +25,59 @@
 #include <guacamole/socket.h>
 #include <guacamole/user.h>
 
+#include <pthread.h>
 #include <stdlib.h>
 
 const char* TUTORIAL_ARGS[] = { NULL };
+
+
+void* ball_render_thread(void* arg) {
+
+    /* Get data */
+    guac_client* client = (guac_client*) arg;
+    ball_client_data* data = (ball_client_data*) client->data;
+
+    /* Update ball position as long as client is running */
+    while (client->state == GUAC_CLIENT_RUNNING) {
+
+        /* Sleep a bit */
+        usleep(30000);
+
+        /* Update position */
+        data->ball_x += data->ball_velocity_x * 30 / 1000;
+        data->ball_y += data->ball_velocity_y * 30 / 1000;
+
+        /* Bounce if necessary */
+        if (data->ball_x < 0) {
+            data->ball_x = -data->ball_x;
+            data->ball_velocity_x = -data->ball_velocity_x;
+        }
+        else if (data->ball_x >= 1024 - 128) {
+            data->ball_x = (2 * (1024 - 128)) - data->ball_x;
+            data->ball_velocity_x = -data->ball_velocity_x;
+        }
+
+        if (data->ball_y < 0) {
+            data->ball_y = -data->ball_y;
+            data->ball_velocity_y = -data->ball_velocity_y;
+        }
+        else if (data->ball_y >= 768 - 128) {
+            data->ball_y = (2 * (768 - 128)) - data->ball_y;
+            data->ball_velocity_y = -data->ball_velocity_y;
+        }
+
+        guac_protocol_send_move(client->socket, data->ball,
+                GUAC_DEFAULT_LAYER, data->ball_x, data->ball_y, 0);
+
+        /* End frame and flush socket */
+        guac_client_end_frame(client);
+        guac_socket_flush(client->socket);
+
+    }
+
+    return NULL;
+
+}
 
 int ball_join_handler(guac_user* user, int argc, char** argv) {
 
@@ -79,6 +129,9 @@ int ball_join_handler(guac_user* user, int argc, char** argv) {
 int ball_free_handler(guac_client* client) {
 
     ball_client_data* data = (ball_client_data*) client->data;
+    
+    /* Wait for render thread to terminate */
+    pthread_join(data->render_thread, NULL);
 
     /* Free client-level ball layer */
     guac_client_free_layer(client, data->ball);
@@ -109,6 +162,17 @@ int guac_client_init(guac_client* client) {
     /* Client-level handlers */
     client->join_handler = ball_join_handler;
     client->free_handler = ball_free_handler;
+    
+    /* Start ball at upper left */
+    data->ball_x = 0;
+    data->ball_y = 0;
+
+    /* Move at a reasonable pace to the lower right */
+    data->ball_velocity_x = 200; /* pixels per second */
+    data->ball_velocity_y = 200; /* pixels per second */
+
+    /* Start render thread */
+    pthread_create(&data->render_thread, NULL, ball_render_thread, client);
 
     return 0;
 
