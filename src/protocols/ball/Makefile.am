@@ -5,6 +5,8 @@ AM_FLAGS = -Werror -Wall -pedantic
 
 lib_LTLIBRARIES = libguac-client-ball.la
 
+noinst_HEADERS = ball.h
+
 libguac_client_ball_la_SOURCES = \
     ball.c
 
