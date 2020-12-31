@@ -18,16 +18,53 @@
  */
 
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
+#include <guacamole/user.h>
 
 #include <stdlib.h>
 
 const char* TUTORIAL_ARGS[] = { NULL };
 
-int guac_client_init(guac_client* client) {
-    
-    client->args = TUTORIAL_ARGS;
-    
+int ball_join_handler(guac_user* user, int argc, char** argv) {
+
+    /* Get client associated with user */
+    guac_client* client = user->client;
+
+    /* Get user-specific socket */
+    guac_socket* socket = user->socket;
+
+    /* Send the display size */
+    guac_protocol_send_size(socket, GUAC_DEFAULT_LAYER, 1024, 768);
+
+    /* Prepare a curve which covers the entire layer */
+    guac_protocol_send_rect(socket, GUAC_DEFAULT_LAYER,
+            0, 0, 1024, 768);
+
+    /* Fill curve with solid color */
+    guac_protocol_send_cfill(socket,
+            GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
+            0x80, 0x80, 0x80, 0xFF);
+
+    /* Mark end-of-frame */
+    guac_protocol_send_sync(socket, client->last_sent_timestamp);
+
+    /* Flush buffer */
+    guac_socket_flush(socket);
+
+    /* User successfully initialized */
     return 0;
-    
+
 }
 
+int guac_client_init(guac_client* client) {
+
+    /* This example does not implement any arguments */
+    client->args = TUTORIAL_ARGS;
+
+    /* Client-level handlers */
+    client->join_handler = ball_join_handler;
+
+    return 0;
+
+}
