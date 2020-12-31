@@ -23,6 +23,7 @@
 #include <guacamole/layer.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/timestamp.h>
 #include <guacamole/user.h>
 
 #include <pthread.h>
@@ -37,15 +38,30 @@ void* ball_render_thread(void* arg) {
     guac_client* client = (guac_client*) arg;
     ball_client_data* data = (ball_client_data*) client->data;
 
+    /* Init time of last frame to current time */
+    guac_timestamp last_frame = guac_timestamp_current();
+    
     /* Update ball position as long as client is running */
     while (client->state == GUAC_CLIENT_RUNNING) {
 
-        /* Sleep a bit */
-        usleep(30000);
+        /* Default to 30ms frames */
+        int frame_duration = 30;
+
+        /* Lengthen frame duration if client is lagging */
+        int processing_lag = guac_client_get_processing_lag(client);
+        if (processing_lag > frame_duration)
+            frame_duration = processing_lag;
+
+        /* Sleep for duration of frame, then get timestamp */
+        usleep(frame_duration);
+        guac_timestamp current = guac_timestamp_current();
+
+        /* Calculate change in time */
+        int delta_t = current - last_frame;
 
         /* Update position */
-        data->ball_x += data->ball_velocity_x * 30 / 1000;
-        data->ball_y += data->ball_velocity_y * 30 / 1000;
+        data->ball_x += data->ball_velocity_x * delta_t / 1000;
+        data->ball_y += data->ball_velocity_y * delta_t / 1000;
 
         /* Bounce if necessary */
         if (data->ball_x < 0) {
@@ -72,6 +88,9 @@ void* ball_render_thread(void* arg) {
         /* End frame and flush socket */
         guac_client_end_frame(client);
         guac_socket_flush(client->socket);
+        
+        /* Update timestamp */
+        last_frame = current;
 
     }
 
