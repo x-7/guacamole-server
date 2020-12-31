@@ -94,26 +94,52 @@ int ball_join_handler(guac_user* user, int argc, char** argv) {
     /* Send the display size */
     guac_protocol_send_size(socket, GUAC_DEFAULT_LAYER, 1024, 768);
 
+    /* Create background tile */
+    guac_layer* texture = guac_client_alloc_buffer(client);
+
+    guac_protocol_send_rect(socket, texture, 0, 0, 64, 64);
+    guac_protocol_send_cfill(socket, GUAC_COMP_OVER, texture,
+            0x88, 0x88, 0x88, 0xFF);
+
+    guac_protocol_send_rect(socket, texture, 0, 0, 32, 32);
+    guac_protocol_send_cfill(socket, GUAC_COMP_OVER, texture,
+            0xDD, 0xDD, 0xDD, 0xFF);
+
+    guac_protocol_send_rect(socket, texture, 32, 32, 32, 32);
+    guac_protocol_send_cfill(socket, GUAC_COMP_OVER, texture,
+            0xDD, 0xDD, 0xDD, 0xFF);
+    
     /* Prepare a curve which covers the entire layer */
     guac_protocol_send_rect(socket, GUAC_DEFAULT_LAYER,
             0, 0, 1024, 768);
 
-    /* Fill curve with solid color */
-    guac_protocol_send_cfill(socket,
+    /* Fill curve with texture */
+    guac_protocol_send_lfill(socket,
             GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
-            0x80, 0x80, 0x80, 0xFF);
+            texture);
 
     /* Set up ball layer */
     guac_protocol_send_size(socket, ball, 128, 128);
 
-    /* Prepare a curve which covers the entire layer */
-    guac_protocol_send_rect(socket, ball,
-            0, 0, 128, 128);
+    /* Prepare a circular curve */
+    guac_protocol_send_arc(socket, data->ball,
+            64, 64, 62, 0, 6.28, 0);
 
-    /* Fill curve with solid color */
+    guac_protocol_send_close(socket, data->ball);
+
+    /* Draw a 4-pixel black border */
+    guac_protocol_send_cstroke(socket,
+            GUAC_COMP_OVER, data->ball,
+            GUAC_LINE_CAP_ROUND, GUAC_LINE_JOIN_ROUND, 4,
+            0x00, 0x00, 0x00, 0xFF);
+
+    /* Fill the circle with color */
     guac_protocol_send_cfill(socket,
-            GUAC_COMP_OVER, ball,
-            0x00, 0x80, 0x80, 0xFF);
+            GUAC_COMP_OVER, data->ball,
+            0x00, 0x80, 0x80, 0x80);
+
+    /* Free texture (no longer needed) */
+    guac_client_free_buffer(client, texture);
     
     /* Mark end-of-frame */
     guac_protocol_send_sync(socket, client->last_sent_timestamp);
