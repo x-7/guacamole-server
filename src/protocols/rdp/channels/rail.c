@@ -97,6 +97,12 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
         .flags = 0x00
     };
 
+    client_status.flags |= TS_RAIL_CLIENTSTATUS_ZORDER_SYNC;
+    client_status.flags |= TS_RAIL_CLIENTSTATUS_WINDOW_RESIZE_MARGIN_SUPPORTED;
+    client_status.flags |= TS_RAIL_CLIENTSTATUS_APPBAR_REMOTING_SUPPORTED;
+    client_status.flags |= TS_RAIL_CLIENTSTATUS_POWER_DISPLAY_REQUEST_SUPPORTED;
+    client_status.flags |= TS_RAIL_CLIENTSTATUS_BIDIRECTIONAL_CLOAK_SUPPORTED;
+
     /* Send client status */
     pthread_mutex_lock(&(rdp_client->message_lock));
     status = rail->ClientInformation(rail, &client_status);

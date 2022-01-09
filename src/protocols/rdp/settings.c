@@ -1509,8 +1509,12 @@ void guac_rdp_push_settings(guac_client* client,
         rdp_settings->RemoteApplicationMode = TRUE;
         rdp_settings->RemoteAppLanguageBarSupported = TRUE;
         rdp_settings->RemoteApplicationProgram = guac_strdup(guac_settings->remote_app);
-        rdp_settings->ShellWorkingDirectory = guac_strdup(guac_settings->remote_app_dir);
+        if (guac_settings->remote_app_dir != NULL)
+            rdp_settings->RemoteApplicationWorkingDir = guac_strdup(guac_settings->remote_app_dir);
         rdp_settings->RemoteApplicationCmdLine = guac_strdup(guac_settings->remote_app_args);
+        rdp_settings->DisableWallpaper = TRUE;
+        rdp_settings->DisableFullWindowDrag = TRUE;
+        rdp_settings->Decorations = TRUE;
     }
 
     /* Preconnection ID */
@@ -1556,7 +1560,7 @@ void guac_rdp_push_settings(guac_client* client,
     rdp_settings->GlyphSupportLevel = !guac_settings->disable_glyph_caching ? GLYPH_SUPPORT_FULL : GLYPH_SUPPORT_NONE;
     rdp_settings->OsMajorType = OSMAJORTYPE_UNSPECIFIED;
     rdp_settings->OsMinorType = OSMINORTYPE_UNSPECIFIED;
-    rdp_settings->DesktopResize = TRUE;
+    rdp_settings->DesktopResize = FALSE;
 
     /* Claim support only for specific updates, independent of FreeRDP defaults */
     ZeroMemory(rdp_settings->OrderSupport, GUAC_RDP_ORDER_SUPPORT_LENGTH);
