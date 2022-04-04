@@ -1037,6 +1037,21 @@ int guac_protocol_send_shade(guac_socket* socket, const guac_layer* layer,
 int guac_protocol_send_size(guac_socket* socket, const guac_layer* layer,
         int w, int h);
 
+/**
+ * Send the uri instruction over the given guac_socket connection,
+ * providing a URI that the client should then process locally.
+ * 
+ * @param socket
+ *     The guac_socket connection to which to send the uri instruction.
+ *
+ * @param uri
+ *     The URI that should be sent to the client.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_uri(guac_socket* socket, const char* uri);
+
 /* TEXT INSTRUCTIONS */
 
 /**

@@ -862,6 +862,17 @@ void guac_user_stream_webp(guac_user* user, guac_socket* socket,
 int guac_user_supports_required(guac_user* user);
 
 /**
+ * Returns non-zero if the user supports the "uri" instruction.
+ *
+ * @param user
+ *     The Guacamole user to check for support of the "uri" instruction.
+ *
+ * @return
+ *     Non-zero if the user supports the "uri" instruction, otherwise zero.
+ */
+int guac_user_supports_uri(guac_user* user);
+
+/**
  * Returns whether the given user supports WebP. If the user does not
  * support WebP, or the server cannot encode WebP images, zero is returned.
  *

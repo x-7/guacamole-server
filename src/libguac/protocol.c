@@ -65,6 +65,7 @@ guac_protocol_version_mapping guac_protocol_version_table[] = {
     { GUAC_PROTOCOL_VERSION_1_0_0,   "VERSION_1_0_0" },
     { GUAC_PROTOCOL_VERSION_1_1_0,   "VERSION_1_1_0" },
     { GUAC_PROTOCOL_VERSION_1_3_0,   "VERSION_1_3_0" },
+    { GUAC_PROTOCOL_VERSION_1_6_0,   "VERSION_1_6_0" },
     { GUAC_PROTOCOL_VERSION_UNKNOWN, NULL }
 };
 
@@ -1267,6 +1268,21 @@ int guac_protocol_send_undefine(guac_socket* socket,
     ret_val =
            guac_socket_write_string(socket, "8.undefine,")
         || __guac_socket_write_length_int(socket, object->index)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
+int guac_protocol_send_uri(guac_socket* socket, const char* uri) {
+
+    int ret_val;
+    
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "3.uri,")
+        || __guac_socket_write_length_string(socket, uri)
         || guac_socket_write_string(socket, ";");
 
     guac_socket_instruction_end(socket);

@@ -717,3 +717,62 @@ int guac_client_supports_webp(guac_client* client) {
 
 }
 
+/**
+ * A callback that it is invokved by the call to guac_client_owner_send_uri
+ * which sends the 'uri" instruction and parameter to the specified user, who
+ * is the owner of the connection.
+ *
+ * @param user
+ *     The user to send the "uri" instruction and parameter to, who owns the
+ *     connection.
+ *
+ * @param data
+ *     The URI to send to the owner, cast as a void*.
+ *
+ * @return
+ *     Zero if the operation succeeds or non-zero on failure.
+ */
+static void* guac_client_owner_send_uri_callback(guac_user* user, void* data) {
+    
+    const char* uri = (const char *) data;
+    
+    /* Send uri parameter to owner. */
+    if (user != NULL)
+        return (void*) ((intptr_t) guac_protocol_send_uri(user->socket, uri));
+    
+    return (void*) ((intptr_t) -1);
+}
+
+int guac_client_owner_send_uri(guac_client* client, const char* uri) {
+
+    /* Don't send the uri instruction if the client does not support it. */
+    if (!guac_client_owner_supports_uri(client))
+        return -1;
+
+    return (int) ((intptr_t) guac_client_for_owner(client, guac_client_owner_send_uri_callback, (void *) uri));
+
+}
+
+/**
+ * Callback function that is invoked by guac_client_owner_supports_uri to
+ * determine if the owner of a connection supports the "uri" instruction,
+ * so that Guacamole can pass URIs to the client browser.
+ *
+ * @param user
+ *     The user that is being checked for URI support, which should be the
+ *     owner of the connection.
+ *
+ * @param data
+ *     Additional data - this will always be null.
+ *
+ * @return
+ *     A non-zero integer if the user supports the "uri" instruction, otherwise
+ *     zero to indicate a lack of URI support.
+ */
+static void* guac_owner_supports_uri_callback(guac_user* user, void* data) {
+    return (void*) ((intptr_t) guac_user_supports_uri(user));
+}
+
+int guac_client_owner_supports_uri(guac_client* client) {
+    return (int) ((intptr_t) guac_client_for_owner(client, guac_owner_supports_uri_callback, NULL));
+}

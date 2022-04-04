@@ -29,6 +29,7 @@
 #include "channels/rdpdr/rdpdr.h"
 #include "channels/rdpei.h"
 #include "channels/rdpsnd/rdpsnd.h"
+#include "channels/rdpuri.h"
 #include "client.h"
 #include "color.h"
 #include "common/cursor.h"
@@ -122,6 +123,9 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         guac_rdpdr_load_plugin(context);
         guac_rdpsnd_load_plugin(context);
     }
+
+    /* Load rdpuri service */
+    guac_rdpuri_load_plugin(context);
 
     /* Load RAIL plugin if RemoteApp in use */
     if (settings->remote_app != NULL)

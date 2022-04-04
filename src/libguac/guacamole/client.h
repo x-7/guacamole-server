@@ -566,6 +566,22 @@ int guac_client_get_processing_lag(guac_client* client);
 int guac_client_owner_send_required(guac_client* client, const char** required);
 
 /**
+ * Sends the "uri" instruction to the given guac_client so that the remote
+ * client can process the URI, if the client supports it and has a handler
+ * configured for the URI.
+ *
+ * @param client
+ *     The client to which to send the URI instruction.
+ * 
+ * @param uri
+ *     The URI to send to the remote client.
+ *
+ * @return
+ *     Zero on success, non-zero on failure.
+ */
+int guac_client_owner_send_uri(guac_client* client, const char* uri);
+
+/**
  * Streams the given connection parameter value over an argument value stream
  * ("argv" instruction), exposing the current value of the named connection
  * parameter to all users of the given client. The argument value stream will
@@ -735,6 +751,8 @@ int guac_client_owner_supports_required(guac_client* client);
  *     the server has been built with WebP support, zero otherwise.
  */
 int guac_client_supports_webp(guac_client* client);
+
+int guac_client_owner_supports_uri(guac_client* client);
 
 /**
  * The default Guacamole client layer, layer 0.

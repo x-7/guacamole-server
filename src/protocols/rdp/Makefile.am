@@ -59,6 +59,7 @@ libguac_client_rdp_la_SOURCES =                  \
     channels/rdpei.c                             \
     channels/rdpsnd/rdpsnd-messages.c            \
     channels/rdpsnd/rdpsnd.c                     \
+    channels/rdpuri.c                            \
     client.c                                     \
     color.c                                      \
     decompose.c                                  \
@@ -105,6 +106,7 @@ noinst_HEADERS =                                 \
     channels/rdpei.h                             \
     channels/rdpsnd/rdpsnd-messages.h            \
     channels/rdpsnd/rdpsnd.h                     \
+    channels/rdpuri.h                            \
     client.h                                     \
     color.h                                      \
     decompose.h                                  \
