@@ -107,7 +107,7 @@ void guac_spice_clipboard_selection_handler(SpiceMainChannel channel,
 }
 
 void guac_spice_clipboard_selection_grab_handler(SpiceMainChannel channel,
-        guint selection, gpointer types, guint ntypes, guint extra, guac_client* client) {
+        guint selection, guint32* types, guint ntypes, guint extra, guac_client* client) {
 
     guac_client_log(client, GUAC_LOG_DEBUG, "Notifying client of clipboard grab"
             " in the guest.");

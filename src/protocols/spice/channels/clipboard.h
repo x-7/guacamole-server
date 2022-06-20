@@ -109,7 +109,7 @@ void guac_spice_clipboard_selection_handler(SpiceMainChannel channel,
  *     The guac_client that was passed in when the callback was registered.
  */
 void guac_spice_clipboard_selection_grab_handler(SpiceMainChannel channel,
-        guint selection, gpointer types, guint ntypes, guint other, guac_client* client);
+        guint selection, guint32* types, guint ntypes, guint other, guac_client* client);
 
 /**
  * A handler that will be called by the SPICE client when the SPICE server
