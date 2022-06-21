@@ -84,7 +84,7 @@ guac_user_end_handler guac_spice_clipboard_end_handler;
  *     The guac_client associated with this event handler, passed when the
  *     handler was registered.
  */
-void guac_spice_clipboard_selection_handler(SpiceMainChannel channel,
+void guac_spice_clipboard_selection_handler(SpiceMainChannel* channel,
         guint selection, guint type, gpointer data, guint size,
         guac_client* client);
 
@@ -108,8 +108,8 @@ void guac_spice_clipboard_selection_handler(SpiceMainChannel channel,
  * @param client
  *     The guac_client that was passed in when the callback was registered.
  */
-void guac_spice_clipboard_selection_grab_handler(SpiceMainChannel channel,
-        guint selection, guint32* types, guint ntypes, guint other, guac_client* client);
+void guac_spice_clipboard_selection_grab_handler(SpiceMainChannel* channel,
+        guint selection, guint32* types, guint ntypes, guac_client* client);
 
 /**
  * A handler that will be called by the SPICE client when the SPICE server
@@ -124,8 +124,8 @@ void guac_spice_clipboard_selection_grab_handler(SpiceMainChannel channel,
  * @param client
  *     The guac_client that was registered with the callback.
  */
-void guac_spice_clipboard_selection_release_handler(SpiceMainChannel channel,
-        guint selection, guint other, guac_client* client);
+void guac_spice_clipboard_selection_release_handler(SpiceMainChannel* channel,
+        guint selection, guac_client* client);
 
 /**
  * A handler that will be called by the SPICE client when the SPICE server
@@ -143,7 +143,7 @@ void guac_spice_clipboard_selection_release_handler(SpiceMainChannel channel,
  * @param client
  *     The guac_client object that was registered with the callback.
  */
-void guac_spice_clipboard_selection_request_handler(SpiceMainChannel channel,
+void guac_spice_clipboard_selection_request_handler(SpiceMainChannel* channel,
         guint selection, guint types, guac_client* client);
 
 #endif /* GUAC_SPICE_CLIPBOARD_H */

@@ -85,7 +85,7 @@ int guac_spice_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     return 0;
 }
 
-void guac_spice_clipboard_selection_handler(SpiceMainChannel channel,
+void guac_spice_clipboard_selection_handler(SpiceMainChannel* channel,
         guint selection, guint type, gpointer data, guint size,
         guac_client* client) {
 
@@ -106,8 +106,8 @@ void guac_spice_clipboard_selection_handler(SpiceMainChannel channel,
 
 }
 
-void guac_spice_clipboard_selection_grab_handler(SpiceMainChannel channel,
-        guint selection, guint32* types, guint ntypes, guint extra, guac_client* client) {
+void guac_spice_clipboard_selection_grab_handler(SpiceMainChannel* channel,
+        guint selection, guint32* types, guint ntypes, guac_client* client) {
 
     guac_client_log(client, GUAC_LOG_DEBUG, "Notifying client of clipboard grab"
             " in the guest.");
@@ -115,19 +115,18 @@ void guac_spice_clipboard_selection_grab_handler(SpiceMainChannel channel,
     guac_client_log(client, GUAC_LOG_DEBUG, "Arg: selection: 0x%08x", selection);
     guac_client_log(client, GUAC_LOG_DEBUG, "Arg: types: 0x%08x", types);
     guac_client_log(client, GUAC_LOG_DEBUG, "Arg: ntypes: 0x%08x", ntypes);
-    guac_client_log(client, GUAC_LOG_DEBUG, "Arg: extra: 0x%08x", extra);
 
 }
 
-void guac_spice_clipboard_selection_release_handler(SpiceMainChannel channel,
-        guint selection, guint extra, guac_client* client) {
+void guac_spice_clipboard_selection_release_handler(SpiceMainChannel* channel,
+        guint selection, guac_client* client) {
 
     guac_client_log(client, GUAC_LOG_DEBUG, "Notifying client of clipboard"
             " release in the guest.");
 
 }
 
-void guac_spice_clipboard_selection_request_handler(SpiceMainChannel channel,
+void guac_spice_clipboard_selection_request_handler(SpiceMainChannel* channel,
         guint selection, guint types, guac_client* client) {
 
     guac_client_log(client, GUAC_LOG_DEBUG, "Requesting clipboard data from"
