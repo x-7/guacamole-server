@@ -28,25 +28,6 @@
 #include <spice-client-glib-2.0/spice-client.h>
 
 /**
- * Sets the encoding of clipboard data exchanged with the SPICE server to the
- * encoding having the given name. If the name is NULL, or is invalid, the
- * standard ISO8859-1 encoding will be used.
- *
- * @param client
- *     The client to set the clipboard encoding of.
- *
- * @param name
- *     The name of the encoding to use for all clipboard data. Valid values
- *     are: "ISO8859-1", "UTF-8", "UTF-16", "CP1252", or NULL.
- *
- * @return
- *     Zero if the chosen encoding is standard for SPICE, or non-zero if the
- *     SPICE standard is being violated.
- */
-int guac_spice_set_clipboard_encoding(guac_client* client,
-        const char* name);
-
-/**
  * Handler for inbound clipboard data from Guacamole users.
  */
 guac_user_clipboard_handler guac_spice_clipboard_handler;
@@ -137,14 +118,14 @@ void guac_spice_clipboard_selection_release_handler(SpiceMainChannel* channel,
  * @param selection
  *     The SPICE server clipboard that is requesting data.
  * 
- * @param types
+ * @param type
  *     The type of data to be sent to the SPICE server.
  * 
  * @param client
  *     The guac_client object that was registered with the callback.
  */
 void guac_spice_clipboard_selection_request_handler(SpiceMainChannel* channel,
-        guint selection, guint types, guac_client* client);
+        guint selection, guint type, guac_client* client);
 
 #endif /* GUAC_SPICE_CLIPBOARD_H */
 

@@ -21,11 +21,9 @@
 
 #include "auth.h"
 #include "client.h"
-#include "common/clipboard.h"
 #include "common/cursor.h"
 #include "common/display.h"
 #include "channels/audio.h"
-#include "channels/clipboard.h"
 #include "channels/cursor.h"
 #include "channels/display.h"
 #include "channels/file.h"

@@ -32,21 +32,23 @@
 
 #include <spice-1/spice/vd_agent.h>
 
-int guac_spice_set_clipboard_encoding(guac_client* client,
-        const char* name) {
-
-    guac_client_log(client, GUAC_LOG_DEBUG, "Setting clipboard encoding.");
-
-    return 0;
-
-}
-
 int guac_spice_clipboard_handler(guac_user* user, guac_stream* stream,
         char* mimetype) {
 
-    guac_client_log(user->client, GUAC_LOG_DEBUG, "Calling SPICE clipboard handler.");
     guac_spice_client* spice_client = (guac_spice_client*) user->client->data;
+
+    /* Some versions of VDAgent do not support sending clipboard data. */
+    if (!spice_main_channel_agent_test_capability(spice_client->main_channel, VD_AGENT_CAP_CLIPBOARD_BY_DEMAND)) {
+        guac_client_log(user->client, GUAC_LOG_WARNING, "SPICE Agent does not "
+            " support sending clipboard data on demend.");
+        return 0;
+    }
+
+    /* Clear the current clipboard and send the grab command to the agent. */
     guac_common_clipboard_reset(spice_client->clipboard, mimetype);
+    guint32 clipboard_types[] = { VD_AGENT_CLIPBOARD_UTF8_TEXT };
+    spice_main_channel_clipboard_selection_grab(spice_client->main_channel,
+            VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD, clipboard_types, 1);
 
     /* Set handlers for clipboard stream */
     stream->blob_handler = guac_spice_clipboard_blob_handler;
@@ -58,8 +60,6 @@ int guac_spice_clipboard_handler(guac_user* user, guac_stream* stream,
 int guac_spice_clipboard_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length) {
 
-    guac_client_log(user->client, GUAC_LOG_DEBUG, "Calling SPICE clipboard BLOB handler.");
-
     /* Append new data */
     guac_spice_client* spice_client = (guac_spice_client*) user->client->data;
     guac_common_clipboard_append(spice_client->clipboard, (char*) data, length);
@@ -69,18 +69,20 @@ int guac_spice_clipboard_blob_handler(guac_user* user, guac_stream* stream,
 
 int guac_spice_clipboard_end_handler(guac_user* user, guac_stream* stream) {
 
-    guac_client_log(user->client, GUAC_LOG_DEBUG, "Calling SPICE clipboard end handler.");
-
     guac_spice_client* spice_client = (guac_spice_client*) user->client->data;
-    const char* input = spice_client->clipboard->buffer;
 
     /* Send via VNC only if finished connecting */
-    if (spice_client->main_channel != NULL)
+    if (spice_client->main_channel != NULL) {
         spice_main_channel_clipboard_selection_notify(spice_client->main_channel,
             VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD,
             VD_AGENT_CLIPBOARD_UTF8_TEXT,
-            (const unsigned char*) input,
+            (const unsigned char*) spice_client->clipboard->buffer,
             spice_client->clipboard->length);
+
+        /* Release the grab on the agent clipboard. */
+        spice_main_channel_clipboard_selection_release(spice_client->main_channel,
+            VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD);
+    }
 
     return 0;
 }
@@ -89,13 +91,12 @@ void guac_spice_clipboard_selection_handler(SpiceMainChannel* channel,
         guint selection, guint type, gpointer data, guint size,
         guac_client* client) {
 
-    guac_client_log(client, GUAC_LOG_DEBUG, "Notifying client of clipboard data"
-            " available from the guest.");
-
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
 
     switch (type) {
         case VD_AGENT_CLIPBOARD_UTF8_TEXT:
+            guac_client_log(client, GUAC_LOG_DEBUG, "Notifying client of text "
+                    " on clipboard from server: %s", (char *) data);
             guac_common_clipboard_append(spice_client->clipboard, (char *) data, size);
             break;
 
@@ -103,6 +104,8 @@ void guac_spice_clipboard_selection_handler(SpiceMainChannel* channel,
             guac_client_log(client, GUAC_LOG_WARNING, "Guacamole currently does"
                 " not support clipboard data other than plain text.");
     }
+
+    guac_common_clipboard_send(spice_client->clipboard, client);
 
 }
 
@@ -116,6 +119,28 @@ void guac_spice_clipboard_selection_grab_handler(SpiceMainChannel* channel,
     guac_client_log(client, GUAC_LOG_DEBUG, "Arg: types: 0x%08x", types);
     guac_client_log(client, GUAC_LOG_DEBUG, "Arg: ntypes: 0x%08x", ntypes);
 
+    /* Ignore selection types other than clipboard. */
+    if (selection != VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Unsupported clipboard grab type: %d", selection);
+        return;
+    }
+
+    /* Loop through the data types sent by the SPICE server and process them. */
+    for (int i = 0; i < ntypes; i++) {
+        /* At present, Guacamole only supports text. */
+        if (types[i] != VD_AGENT_CLIPBOARD_UTF8_TEXT) {
+            guac_client_log(client, GUAC_LOG_WARNING, "Unsupported clipboard data type: %d", types[i]);
+            continue;
+        }
+
+        /* Reset our clipboard and request the data from the SPICE serer. */
+        guac_spice_client* spice_client = (guac_spice_client*) client->data;
+        guac_common_clipboard_reset(spice_client->clipboard, "text/plain");
+        spice_main_channel_clipboard_selection_request(channel, selection, types[i]);
+    }
+
+    
+
 }
 
 void guac_spice_clipboard_selection_release_handler(SpiceMainChannel* channel,
@@ -124,21 +149,34 @@ void guac_spice_clipboard_selection_release_handler(SpiceMainChannel* channel,
     guac_client_log(client, GUAC_LOG_DEBUG, "Notifying client of clipboard"
             " release in the guest.");
 
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+    guac_common_clipboard_send(spice_client->clipboard, client);
+
 }
 
 void guac_spice_clipboard_selection_request_handler(SpiceMainChannel* channel,
-        guint selection, guint types, guac_client* client) {
+        guint selection, guint type, guac_client* client) {
 
     guac_client_log(client, GUAC_LOG_DEBUG, "Requesting clipboard data from"
             " the client.");
 
-    guac_spice_client* spice_client = (guac_spice_client*) client->data;
-    const char* input = spice_client->clipboard->buffer;
+    if (selection != VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Unsupported selection type: %d", selection);
+        return;
+    }
 
-    spice_main_channel_clipboard_selection_notify(spice_client->main_channel,
-            VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD,
-            VD_AGENT_CLIPBOARD_UTF8_TEXT,
-            (const unsigned char*) input,
+    if (type != VD_AGENT_CLIPBOARD_UTF8_TEXT) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Unsupported clipboard data type: %d", type);
+        return;
+    }
+
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+    guac_client_log(client, GUAC_LOG_DEBUG, "Sending clipboard data to server: %s", spice_client->clipboard->buffer);
+
+    spice_main_channel_clipboard_selection_notify(channel,
+            selection,
+            type,
+            (const unsigned char*) spice_client->clipboard->buffer,
             spice_client->clipboard->length);
 
 }

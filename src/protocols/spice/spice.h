@@ -137,16 +137,6 @@ typedef struct guac_spice_client {
     guac_recording* recording;
 
     /**
-     * Clipboard encoding-specific reader.
-     */
-    guac_iconv_read* clipboard_reader;
-
-    /**
-     * Clipboard encoding-specific writer.
-     */
-    guac_iconv_write* clipboard_writer;
-
-    /**
      * Common attributes for locks.
      */
     pthread_mutexattr_t attributes;
