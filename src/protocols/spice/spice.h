@@ -29,6 +29,7 @@
 #include "keyboard.h"
 #include "settings.h"
 
+#include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/layer.h>
 #include <guacamole/recording.h>
@@ -154,6 +155,11 @@ typedef struct guac_spice_client {
      * attempts to send SPICE messages never overlap.
      */
     pthread_mutex_t message_lock;
+
+    /**
+     * Audio output, if any.
+     */
+    guac_audio_stream* audio_playback;
 
 } guac_spice_client;
 

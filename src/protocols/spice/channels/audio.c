@@ -20,7 +20,9 @@
 #include "config.h"
 
 #include "audio.h"
+#include "spice.h"
 
+#include <guacamole/audio.h>
 #include <guacamole/client.h>
 
 void guac_spice_client_audio_playback_data_handler(
@@ -28,6 +30,9 @@ void guac_spice_client_audio_playback_data_handler(
         guac_client* client) {
     
     guac_client_log(client, GUAC_LOG_DEBUG, "Calling audio playback data handler.");
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    guac_audio_stream_write_pcm(spice_client->audio_playback, data, size);
     
 }
 
@@ -43,6 +48,20 @@ void guac_spice_client_audio_playback_start_handler(
         guac_client* client) {
     
     guac_client_log(client, GUAC_LOG_DEBUG, "Calling audio playback start handler.");
+    guac_client_log(client, GUAC_LOG_DEBUG, "Format: %d", format);
+    guac_client_log(client, GUAC_LOG_DEBUG, "Channels: %d", channels);
+    guac_client_log(client, GUAC_LOG_DEBUG, "Rate: %d", rate);
+
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    int bps = 16;
+
+    if (format != SPICE_AUDIO_FMT_S16) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Unknown Spice audio format: %d", format);
+        return;
+    }
+
+    spice_client->audio_playback = guac_audio_stream_alloc(client, NULL, rate, channels, bps);
     
 }
 
@@ -50,6 +69,10 @@ void guac_spice_client_audio_playback_stop_handler(
         SpicePlaybackChannel* channel, guac_client* client) {
     
     guac_client_log(client, GUAC_LOG_DEBUG, "Calling audio playback stop handler.");
+
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    guac_audio_stream_free(spice_client->audio_playback);
     
 }
 

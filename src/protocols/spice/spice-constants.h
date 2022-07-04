@@ -333,7 +333,7 @@
  * A signal sent when the server is notifying the client that audio playback
  * should begin, which also contains characteristics of that audio data.
  */
-#define SPICE_SIGNAL_PLAYBACK_START "plaback-start"
+#define SPICE_SIGNAL_PLAYBACK_START "playback-start"
 
 /**
  * A signal sent when audio playback should cease.
