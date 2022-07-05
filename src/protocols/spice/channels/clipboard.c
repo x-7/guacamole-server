@@ -80,8 +80,8 @@ int guac_spice_clipboard_end_handler(guac_user* user, guac_stream* stream) {
             spice_client->clipboard->length);
 
         /* Release the grab on the agent clipboard. */
-        spice_main_channel_clipboard_selection_release(spice_client->main_channel,
-            VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD);
+        // spice_main_channel_clipboard_selection_release(spice_client->main_channel,
+        //    VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD);
     }
 
     return 0;
