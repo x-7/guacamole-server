@@ -39,6 +39,9 @@ libguac_client_spice_la_SOURCES = \
     channels/cursor.c             \
     channels/display.c            \
     channels/file.c               \
+    channels/file-download.c      \
+    channels/file-ls.c            \
+    channels/file-upload.c        \
     client.c                      \
     decompose.c                   \
     input.c                       \
@@ -49,22 +52,25 @@ libguac_client_spice_la_SOURCES = \
     spice.c                       \
     user.c                      
     
-noinst_HEADERS =         \
-    argv.h               \
-    auth.h               \
-    channels/audio.h     \
-    channels/clipboard.h \
-    channels/cursor.h    \
-    channels/display.h   \
-    channels/file.h      \
-    client.h             \
-    decompose.h          \
-    input.h              \
-    keyboard.h           \
-    keymap.h             \
-    log.h                \
-    settings.h           \
-    spice.h              \
+noinst_HEADERS =             \
+    argv.h                   \
+    auth.h                   \
+    channels/audio.h         \
+    channels/clipboard.h     \
+    channels/cursor.h        \
+    channels/display.h       \
+    channels/file.h          \
+    channels/file-download.h \
+    channels/file-ls.h       \
+    channels/file-upload.h   \
+    client.h                 \
+    decompose.h              \
+    input.h                  \
+    keyboard.h               \
+    keymap.h                 \
+    log.h                    \
+    settings.h               \
+    spice.h                  \
     user.h            
 
 libguac_client_spice_la_CFLAGS =      \

@@ -238,12 +238,14 @@ void guac_spice_client_channel_handler(SpiceSession *spice_session,
     
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
     guac_spice_settings* settings = spice_client->settings;
-    int id;
+    int id, type;
     
-    /* Get the channel ID. */
+    /* Get the channel ID and type. */
     g_object_get(channel, SPICE_PROPERTY_CHANNEL_ID, &id, NULL);
+    g_object_get(channel, SPICE_PROPERTY_CHANNEL_TYPE, &type, NULL);
     
     guac_client_log(client, GUAC_LOG_DEBUG, "New channel created: %i", id);
+    guac_client_log(client, GUAC_LOG_DEBUG, "New channel type: %i", type);
     
     /* Check if this is the main channel and register handlers. */
     if (SPICE_IS_MAIN_CHANNEL(channel)) {
@@ -365,6 +367,11 @@ void guac_spice_client_channel_handler(SpiceSession *spice_session,
                 && settings->file_directory != NULL
                 && strcmp(settings->file_directory, "") != 0) {
         }
+    }
+
+    if (SPICE_IS_USBREDIR_CHANNEL(channel)) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "USB redirection is not yet implemented.");
+        return;
     }
     
     guac_client_log(client, GUAC_LOG_DEBUG, "Calling spice_channel_connect for channel %d.", id);

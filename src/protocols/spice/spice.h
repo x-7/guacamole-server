@@ -22,6 +22,7 @@
 
 #include "config.h"
 
+#include "channels/file.h"
 #include "common/clipboard.h"
 #include "common/display.h"
 #include "common/iconv.h"
@@ -113,6 +114,11 @@ typedef struct guac_spice_client {
      * Internal clipboard.
      */
     guac_common_clipboard* clipboard;
+
+    /**
+     * Shared folder.
+     */
+    guac_spice_folder* shared_folder;
 
 #ifdef ENABLE_COMMON_SSH
     /**

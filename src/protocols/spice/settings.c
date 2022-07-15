@@ -58,6 +58,9 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
     "file-transfer",
     "file-directory",
     "file-transfer-ro",
+    "file-transfer-create-folder",
+    "disable-download",
+    "disable-upload",
     "server-layout",
 
 #ifdef ENABLE_COMMON_SSH
@@ -211,6 +214,24 @@ enum SPICE_ARGS_IDX {
      * server.
      */
     IDX_FILE_TRANSFER_RO,
+
+    /**
+     * Whether or not Guacamole should attempt to create the shared folder
+     * if it does not already exist.
+     */
+    IDX_FILE_TRANSFER_CREATE_FOLDER,
+
+    /**
+     * "true" if downloads from the remote server to Guacamole client should
+     * be disabled, otherwise false or blank.
+     */
+    IDX_DISABLE_DOWNLOAD,
+
+    /**
+     * "true" if uploads from Guacamole Client to the shared folder should be
+     * disabled, otherwise false or blank.
+     */
+    IDX_DISABLE_UPLOAD,
 
     /**
      * The name of the keymap chosen as the layout of the server. Legal names
@@ -467,6 +488,21 @@ guac_spice_settings* guac_spice_parse_args(guac_user* user,
     settings->file_transfer_ro =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_FILE_TRANSFER_RO, false);
+
+    /* Whether or not Guacamole should attempt to create a non-existent folder. */
+    settings->file_transfer_create_folder =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_FILE_TRANSFER_CREATE_FOLDER, false);
+
+    /* Whether or not downloads (Server -> Client) should be disabled. */
+    settings->disable_download =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_DISABLE_DOWNLOAD, false);
+
+    /* Whether or not uploads (Client -> Server) should be disabled. */
+    settings->disable_upload =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_DISABLE_UPLOAD, false);
 
     /* Pick keymap based on argument */
     settings->server_layout = NULL;

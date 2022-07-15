@@ -100,6 +100,24 @@ SpiceSession* guac_spice_get_session(guac_client* client) {
     spice_client->keyboard = guac_spice_keyboard_alloc(client,
             spice_settings->server_layout);
 
+    if (spice_settings->file_transfer) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "File transfer enabled, configuring Spice client.");
+        g_object_set(spice_session, SPICE_PROPERTY_SHARED_DIR, spice_settings->file_directory, NULL);
+        g_object_set(spice_session, SPICE_PROPERTY_SHARED_DIR_RO, spice_settings->file_transfer_ro, NULL);
+        spice_client->shared_folder = guac_spice_folder_alloc(client,
+                spice_settings->file_directory,
+                spice_settings->file_transfer_create_folder,
+                spice_settings->disable_download,
+                spice_settings->disable_upload
+        );
+        guac_client_for_owner(client, guac_spice_folder_expose,
+                spice_client->shared_folder);
+    }
+    else {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Disabling file transfer.");
+        g_object_set(spice_session, SPICE_PROPERTY_SHARED_DIR, NULL, NULL);
+    }
+
     guac_client_log(client, GUAC_LOG_DEBUG, "Finished setting properties.");
     
     /* Return the configured session. */

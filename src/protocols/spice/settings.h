@@ -129,6 +129,23 @@ typedef struct guac_spice_settings {
     bool file_transfer_ro;
 
     /**
+     * If the folder does not exist and this setting is set to True, guacd
+     * will attempt to create the folder.
+     */
+    bool file_transfer_create_folder;
+
+    /**
+     * True if downloads (Remote Server -> Guacamole Client) should be
+     * disabled.
+     */
+    bool disable_download;
+
+    /**
+     * True if uploads (Guacamole Client -> Remote Server) should be disabled.
+     */
+    bool disable_upload;
+
+    /**
      * The keymap chosen as the layout of the server.
      */
     const guac_spice_keymap* server_layout;

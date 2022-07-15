@@ -32,6 +32,81 @@
 #define GUAC_SPICE_DEFAULT_DISPLAY_ID 0
 
 /**
+ * Error code returned when no more file IDs can be allocated.
+ */
+#define GUAC_SPICE_FOLDER_ENFILE -1
+
+/**
+ * Error code returned when no such file exists.
+ */
+#define GUAC_SPICE_FOLDER_ENOENT -2
+
+/**
+ * Error code returned when the operation required a directory
+ * but the file was not a directory.
+ */
+#define GUAC_SPICE_FOLDER_ENOTDIR -3
+
+/**
+ * Error code returned when insufficient space exists to complete
+ * the operation.
+ */
+#define GUAC_SPICE_FOLDER_ENOSPC -4
+
+/**
+ * Error code returned when the operation requires a normal file but
+ * a directory was given.
+ */
+#define GUAC_SPICE_FOLDER_EISDIR -5
+
+/**
+ * Error code returned when permission is denied.
+ */
+#define GUAC_SPICE_FOLDER_EACCES -6
+
+/**
+ * Error code returned when the operation cannot be completed because the
+ * file already exists.
+ */
+#define GUAC_SPICE_FOLDER_EEXIST -7
+
+/**
+ * Error code returned when invalid parameters were given.
+ */
+#define GUAC_SPICE_FOLDER_EINVAL -8
+
+/**
+ * Error code returned when the operation is not implemented.
+ */
+#define GUAC_SPICE_FOLDER_ENOSYS -9
+
+/**
+ * Error code returned when the operation is not supported.
+ */
+#define GUAC_SPICE_FOLDER_ENOTSUP -10
+
+/**
+ * The maximum number of events that can be monitored at a given time for
+ * the Spice shared folder Download folder monitor.
+ */
+#define GUAC_SPICE_FOLDER_MAX_EVENTS 256
+
+/**
+ * The maximum length of a path in a shared folder.
+ */
+#define GUAC_SPICE_FOLDER_MAX_PATH 4096
+
+/**
+ * The maximum number of open files in a shared folder.
+ */
+#define GUAC_SPICE_FOLDER_MAX_FILES 128
+
+/**
+ * The maximum level of folder deptch in a shared folder.
+ */
+#define GUAC_SPICE_FOLDER_MAX_PATH_DEPTH 64
+
+/**
  * The TLS verification value from Guacamole Client that indicates that hostname
  * verification should be done.
  */
@@ -78,6 +153,11 @@
  * The SPICE client channel property that stores the identifier of the channel.
  */
 #define SPICE_PROPERTY_CHANNEL_ID "channel-id"
+
+/**
+ * THe SPICE client channel property that stores the type of the channel.
+ */
+#define SPICE_PROPERTY_CHANNEL_TYPE "channel-type"
 
 /**
  * SPICE library property that determines whether or not the sockets are provided
@@ -350,6 +430,11 @@
  * A signal indicating that audio capture should cease.
  */
 #define SPICE_SIGNAL_RECORD_STOP "record-stop"
+
+/**
+ * A signal indicating that a share folder is available.
+ */
+#define SPICE_SIGNAL_SHARE_FOLDER "notify::share-folder"
 
 /**
  * The signal indicating that the SPICE server has gone to streaming mode.
