@@ -1004,6 +1004,9 @@ fi
 AM_CONDITIONAL([ENABLE_TELNET], [test "x${have_libtelnet}"  = "xyes" \
                                    -a "x${have_terminal}" = "xyes"])
 
+AM_CONDITIONAL([ENABLE_TN5250], [test "x${have_libtelnet}"  = "xyes" \
+                                   -a "x${have_terminal}" = "xyes"])
+
 AC_SUBST(TELNET_LIBS)
 
 #
@@ -1190,6 +1193,7 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/rdp/tests/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
+                 src/protocols/tn5250/Makefile
                  src/protocols/vnc/Makefile])
 AC_OUTPUT
 
@@ -1201,6 +1205,7 @@ AM_COND_IF([ENABLE_KUBERNETES], [build_kubernetes=yes], [build_kubernetes=no])
 AM_COND_IF([ENABLE_RDP],        [build_rdp=yes],        [build_rdp=no])
 AM_COND_IF([ENABLE_SSH],        [build_ssh=yes],        [build_ssh=no])
 AM_COND_IF([ENABLE_TELNET],     [build_telnet=yes],     [build_telnet=no])
+AM_COND_IF([ENABLE_TN5250],     [build_tn5250=yes],     [build_tn5250=no])
 AM_COND_IF([ENABLE_VNC],        [build_vnc=yes],        [build_vnc=no])
 
 #
@@ -1262,6 +1267,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       RDP ........... ${build_rdp}
       SSH ........... ${build_ssh}
       Telnet ........ ${build_telnet}
+      TN5250 ........ ${build_tn5250}
       VNC ........... ${build_vnc}
 
    Services / tools:
