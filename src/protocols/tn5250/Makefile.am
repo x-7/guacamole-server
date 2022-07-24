@@ -35,18 +35,20 @@ libguac_client_tn5250_la_SOURCES = \
     input.c                        \
     pipe.c                         \
     settings.c                     \
-    tn5250.c                        \
-    user.c
+    tn5250.c                       \
+    user.c                         \
+    lib5250/lib5250.c
 
-noinst_HEADERS = \
-    argv.h       \
-    client.h     \
-    clipboard.h  \
-    input.h      \
-    pipe.h       \
-    settings.h   \
-    tn5250.h     \
-    user.h
+noinst_HEADERS =       \
+    argv.h             \
+    client.h           \
+    clipboard.h        \
+    input.h            \
+    pipe.h             \
+    settings.h         \
+    tn5250.h           \
+    user.h             \
+    lib5250/lib5250.h
 
 libguac_client_tn5250_la_CFLAGS = \
     -Werror -Wall -Iinclude       \

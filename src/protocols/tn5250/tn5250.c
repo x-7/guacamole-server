@@ -21,6 +21,7 @@
 
 #include "argv.h"
 #include "tn5250.h"
+#include "lib5250/lib5250.h"
 #include "terminal/terminal.h"
 
 #include <guacamole/client.h>
@@ -55,9 +56,6 @@ static const telnet_telopt_t __telnet_options[] = {
     { TELNET_TELOPT_ECHO,        TELNET_WONT, TELNET_DO   },
     { TELNET_TELOPT_EOR,         TELNET_WILL, TELNET_DO   },
     { TELNET_TELOPT_TTYPE,       TELNET_WILL, TELNET_DONT },
-    { TELNET_TELOPT_COMPRESS2,   TELNET_WONT, TELNET_DO   },
-    { TELNET_TELOPT_MSSP,        TELNET_WONT, TELNET_DO   },
-    { TELNET_TELOPT_NAWS,        TELNET_WILL, TELNET_DONT },
     { TELNET_TELOPT_NEW_ENVIRON, TELNET_WILL, TELNET_DONT },
     { -1, 0, 0 }
 };
@@ -65,12 +63,21 @@ static const telnet_telopt_t __telnet_options[] = {
 /**
  * Write the entire buffer given to the specified file descriptor, retrying
  * the write automatically if necessary. This function will return a value
- * not equal to the buffer's size iff an error occurs which prevents all
+ * not equal to the buffer's size if an error occurs which prevents all
  * future writes.
  *
- * @param fd The file descriptor to write to.
- * @param buffer The buffer to write.
- * @param size The number of bytes from the buffer to write.
+ * @param fd
+ *     The file descriptor to write to.
+ *
+ * @param buffer
+ *     The buffer to write.
+ *
+ * @param size
+ *     The number of bytes from the buffer to write.
+ *
+ * @return
+ *     Return a value equal to the buffer's size on success, or a value not
+ *     equal to the buffer's size or a negative value on failure.
  */
 static int __guac_tn5250_write_all(int fd, const char* buffer, int size) {
 
@@ -271,6 +278,15 @@ static void guac_tn5250_search(guac_client* client, const char* buffer, int size
  * Event handler, as defined by libtelnet. This function is passed to
  * telnet_init() and will be called for every event fired by libtelnet,
  * including feature enable/disable and receipt/transmission of data.
+ *
+ * @param tn5250
+ *     The telnet_t object associated with the event.
+ *
+ * @param event
+ *     The telnet_event_t that has fired.
+ *
+ * @param data
+ *     User data provided to the event.
  */
 static void __guac_tn5250_event_handler(telnet_t* tn5250, telnet_event_t* event, void* data) {
 
@@ -286,10 +302,15 @@ static void __guac_tn5250_event_handler(telnet_t* tn5250, telnet_event_t* event,
                     "%s: Received %d bytes of data from remote side.", __func__, event->data.size);
             if (tn5250_client->binary_mode) {
                 guac_client_log(client, GUAC_LOG_TRACE,
-                        "%s: Receiving binary data - it will not be printed to the screen.",
+                        "%s: Receiving binary data, which will not go directly to the terminal.",
                         __func__);
+                if (guac_lib5250_process_packet(event->data.buffer, client)) {
+                    return;
+                }
             }
             else {
+                guac_client_log(client, GUAC_LOG_TRACE,
+                        "%s: Writing ASCII output directly to terminal.", __func__);
                 guac_terminal_write(tn5250_client->term, event->data.buffer, event->data.size);
                 guac_tn5250_search(client, event->data.buffer, event->data.size);
             }
@@ -308,6 +329,7 @@ static void __guac_tn5250_event_handler(telnet_t* tn5250, telnet_event_t* event,
         case TELNET_EV_WILL:
             if (event->neg.telopt == TELNET_TELOPT_ECHO)
                 tn5250_client->echo_enabled = 0; /* Disable local echo, as remote will echo */
+
             if (event->neg.telopt == TELNET_TELOPT_EOR) {
                 guac_client_log(client, GUAC_LOG_DEBUG,
                         "%s: Received End of Record support from remote side.",
@@ -366,6 +388,14 @@ static void __guac_tn5250_event_handler(telnet_t* tn5250, telnet_event_t* event,
             if (event->ttype.cmd == TELNET_TTYPE_SEND) {
                 guac_client_log(client, GUAC_LOG_DEBUG,
                         "%s: Sending terminal type \"%s\" to remote side.", __func__, settings->terminal_type);
+
+                /* Apparently sending the TERMINAL TYPE to an IBMi system over
+                 * telnet requires both sending the TERM environment variable
+                 * and responding to the actual telnet TTYPE inquiry. */
+                telnet_begin_newenviron(tn5250, TELNET_ENVIRON_IS);
+                telnet_newenviron_value(tn5250, TELNET_ENVIRON_VAR, "TERM");
+                telnet_newenviron_value(tn5250, TELNET_ENVIRON_VALUE, settings->terminal_type);
+                telnet_finish_sb(tn5250);
                 telnet_ttype_is(tn5250_client->tn5250, settings->terminal_type);
             }
             break;
@@ -376,8 +406,10 @@ static void __guac_tn5250_event_handler(telnet_t* tn5250, telnet_event_t* event,
                     "%s: Received environment request from the remote side.",
                     __func__);
             /* Only send USER if entire environment was requested */
-            if (event->environ.size == 0)
+            if (event->environ.size == 0) {
+                guac_client_log(client, GUAC_LOG_TRACE, "%s: Sending username to remote server: %s", __func__, settings->username);
                 guac_tn5250_send_user(tn5250, settings->username);
+            }
 
             break;
 
@@ -427,8 +459,11 @@ static void __guac_tn5250_event_handler(telnet_t* tn5250, telnet_event_t* event,
  * continuously reads from the terminal's STDIN and transfers all read
  * data to the tn5250 connection.
  *
- * @param data The current guac_client instance.
- * @return Always NULL.
+ * @param data
+ *     The current guac_client instance.
+ *
+ * @return
+ *     Always NULL.
  */
 static void* __guac_tn5250_input_thread(void* data) {
 
@@ -454,8 +489,9 @@ static void* __guac_tn5250_input_thread(void* data) {
  * with the given guac_client, which will have been populated by
  * guac_client_init.
  *
- * @return The connected tn5250 instance, if successful, or NULL if the
- *         connection fails for any reason.
+ * @return
+ *     The connected tn5250 instance, if successful, or NULL if the
+ *     connection fails for any reason.
  */
 static telnet_t* __guac_tn5250_create_session(guac_client* client) {
 
@@ -553,8 +589,11 @@ static telnet_t* __guac_tn5250_create_session(guac_client* client) {
  * Sends a 16-bit value over the given tn5250 connection with the byte order
  * required by the tn5250 protocol.
  *
- * @param tn5250 The tn5250 connection to use.
- * @param value The value to send.
+ * @param tn5250
+ *     The tn5250 connection to use.
+ *
+ * @param value
+ *     The value to send.
  */
 /*
 static void __guac_tn5250_send_uint16(telnet_t* tn5250, uint16_t value) {
@@ -571,33 +610,32 @@ static void __guac_tn5250_send_uint16(telnet_t* tn5250, uint16_t value) {
 /**
  * Sends an 8-bit value over the given tn5250 connection.
  *
- * @param tn5250 The tn5250 connection to use.
- * @param value The value to send.
+ * @param tn5250
+ *     The tn5250 connection to use.
+ *
+ * @param value
+ *     The value to send.
  */
+/*
 static void __guac_tn5250_send_uint8(telnet_t* tn5250, uint8_t value) {
     telnet_send(tn5250, (char*) (&value), 1);
 }
+*/
 
 void guac_tn5250_send_user(telnet_t* tn5250, const char* username) {
 
     /* IAC SB NEW-ENVIRON IS */
-    telnet_begin_sb(tn5250, TELNET_TELOPT_NEW_ENVIRON);
-    __guac_tn5250_send_uint8(tn5250, TELNET_ENVIRON_IS);
+    telnet_begin_newenviron(tn5250, TELNET_ENVIRON_IS);
 
     /* Only send username if defined */
     if (username != NULL) {
 
-        /* VAR "USER" */
-        __guac_tn5250_send_uint8(tn5250, TELNET_ENVIRON_VAR);
-        telnet_send(tn5250, "USER", 4);
-
-        /* VALUE username */
-        __guac_tn5250_send_uint8(tn5250, TELNET_ENVIRON_VALUE);
-        telnet_send(tn5250, username, strlen(username));
+        telnet_newenviron_value(tn5250, TELNET_ENVIRON_VAR, "USER");
+        telnet_newenviron_value(tn5250, TELNET_ENVIRON_VALUE, username);
 
     }
 
-    /* IAC SE */
+    /* IAC SB */
     telnet_finish_sb(tn5250);
 
 }
@@ -634,21 +672,6 @@ void* guac_tn5250_client_thread(void* data) {
     pthread_t input_thread;
     char buffer[8192];
     int wait_result;
-
-    /* If Wake-on-LAN is enabled, attempt to wake. */
-    if (settings->wol_send_packet) {
-        guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet, "
-                "and pausing for %d seconds.", settings->wol_wait_time);
-
-        /* Send the Wake-on-LAN request. */
-        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
-                settings->wol_udp_port))
-            return NULL;
-
-        /* If wait time is specified, sleep for that amount of time. */
-        if (settings->wol_wait_time > 0)
-            guac_timestamp_msleep(settings->wol_wait_time * 1000);
-    }
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
