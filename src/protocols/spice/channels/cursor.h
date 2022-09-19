@@ -25,20 +25,20 @@
 #include <spice-client-glib-2.0/spice-client.h>
 
 /**
- * The callback function that is executed when the cursor hide signal is received
- * from the SPICE server.
+ * The callback function that is executed when the cursor hide signal is
+ * received from the Spice server.
  * 
  * @param channel
  *     The channel which received the cursor hide event.
  * 
  * @param client
- *     The guac_client associated with this session.
+ *     The guac_client associated with this Spice session.
  */
 void guac_spice_cursor_hide(SpiceCursorChannel* channel, guac_client* client);
 
 /**
  * The callback function that is executed when the cursor move signal is
- * received from the server.
+ * received from the Spice server.
  * 
  * @param channel
  *     The channel that received the cursor move event.
@@ -50,7 +50,7 @@ void guac_spice_cursor_hide(SpiceCursorChannel* channel, guac_client* client);
  *     The y position of the cursor.
  * 
  * @param client
- *     The guac_client associated with this SPICE session.
+ *     The guac_client associated with this Spice session.
  */
 void guac_spice_cursor_move(SpiceCursorChannel* channel, int x, int y,
         guac_client* client);
@@ -63,13 +63,13 @@ void guac_spice_cursor_move(SpiceCursorChannel* channel, int x, int y,
  *     The channel that received the cursor reset signal.
  * 
  * @param client
- *     The guac_client associated with this SPICE session.
+ *     The guac_client associated with this Spice session.
  */
 void guac_spice_cursor_reset(SpiceCursorChannel* channel, guac_client* client);
 
 /**
  * The callback function that is executed in response to receiving the cursor
- * set signal from the SPICE server, which sets the width, height, and image
+ * set signal from the Spice server, which sets the width, height, and image
  * of the cursor, and the x and y coordinates of the cursor hotspot.
  * 
  * @param channel
@@ -92,7 +92,7 @@ void guac_spice_cursor_reset(SpiceCursorChannel* channel, guac_client* client);
  *     or NULL if the default cursor image should be used.
  * 
  * @param client
- *     The guac_client associated with this SPICE session.
+ *     The guac_client associated with this Spice session.
  */
 void guac_spice_cursor_set(SpiceCursorChannel* channel, int width, int height,
         int x, int y, gpointer* rgba, guac_client* client);

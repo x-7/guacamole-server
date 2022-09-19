@@ -33,13 +33,13 @@ guac_argv_callback guac_spice_argv_callback;
 
 /**
  * The name of the parameter Guacamole will use to specify/update the username
- * for the SPICE connection.
+ * for the Spice connection.
  */
 #define GUAC_SPICE_ARGV_USERNAME "username"
 
 /**
  * The name of the parameter Guacamole will use to specify/update the password
- * for the SPICE connection.
+ * for the Spice connection.
  */
 #define GUAC_SPICE_ARGV_PASSWORD "password"
 

@@ -26,12 +26,12 @@
 #define SPICE_DEFAULT_HOST "localhost"
 
 /**
- * The default SPICE port number to connect to if none is specified.
+ * The default Spice port number to connect to if none is specified.
  */
 #define SPICE_DEFAULT_PORT "5900"
 
 /**
- * The default encodings to use for the SPICE clipboard.
+ * The default encodings to use for the Spice clipboard.
  */
 #define SPICE_DEFAULT_ENCODINGS "zrle ultra copyrect hextile zlib corre rre raw"
 

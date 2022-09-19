@@ -27,14 +27,14 @@
 #include <glib-unix.h>
 
 /**
- * Handler invoked when an authentication error is received from the SPICE
+ * Handler invoked when an authentication error is received from the Spice
  * server, which retrieves the credentials from the Guacamole Client accessing
  * the connection, if those credentials have not been explicitly set in the
  * configuration. Returns TRUE if credentials are successfully retrieved, or
  * FALSE otherwise.
  * 
  * @param client
- *     The guac_client that is attempting to connect to the SPICE server and
+ *     The guac_client that is attempting to connect to the Spice server and
  *     that will be asked for the credentials.
  * 
  * @return

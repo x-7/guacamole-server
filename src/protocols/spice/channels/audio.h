@@ -28,7 +28,7 @@
 
 /**
  * A callback function invoked with the SPICE client receives audio playback
- * data from the SPICE server.
+ * data from the Spice server.
  * 
  * @param channel
  *     The SpicePlaybackChannel on which the data was sent.
@@ -47,7 +47,7 @@ void guac_spice_client_audio_playback_data_handler(
         guac_client* client);
 
 /**
- * A callback function invoked when the SPICE server requests the audio playback
+ * A callback function invoked when the Spice server requests the audio playback
  * delay value from the client.
  * 
  * @param channel
@@ -60,7 +60,7 @@ void guac_spice_client_audio_playback_delay_handler(
         SpicePlaybackChannel* channel, guac_client* client);
 
 /**
- * A callback function invoked by the client when the SPICE server sends a 
+ * A callback function invoked by the client when the Spice server sends a 
  * signal indicating that it is starting an audio transmission.
  * 
  * @param channel
@@ -101,8 +101,8 @@ void guac_spice_client_audio_playback_stop_handler(
 guac_user_audio_handler guac_spice_client_audio_record_handler;
 
 /**
- * The callback function invoked by the client when the SPICE server requests
- * that the client begin recording audio data to send to the server.
+ * The callback function invoked by the Spice client when the Spice server
+ * requests that the client begin recording audio data to send to the server.
  * 
  * @param channel
  *     The SpiceRecordChannel on which the record event is being requested.
@@ -123,7 +123,7 @@ void guac_spice_client_audio_record_start_handler(SpiceRecordChannel* channel,
         gint format, gint channels, gint rate, guac_client* client);
 
 /**
- * The callback function invoked by the client when the SPICE server sends
+ * The callback function invoked by the Spice client when the Spice server sends
  * an event requesting that recording be stopped.
  * 
  * @param channel

@@ -36,7 +36,7 @@ guac_user_mouse_handler guac_spice_user_mouse_handler;
 guac_user_key_handler guac_spice_user_key_handler;
 
 /**
- * A callback that is invoked when the SPICE server updates the mouse mode.
+ * A callback that is invoked when the Spice server updates the mouse mode.
  * 
  * @param channel
  *     The channel on which the update occurred.

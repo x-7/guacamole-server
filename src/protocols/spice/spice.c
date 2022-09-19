@@ -53,22 +53,16 @@ SpiceSession* guac_spice_get_session(guac_client* client) {
 
     guac_client_log(client, GUAC_LOG_DEBUG, "Initializing new SPICE session.");
     
-    /* Set up the SPICE session and Guacamole client. */
+    /* Set up the Spice session and Guacamole client. */
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
     guac_spice_settings* spice_settings = spice_client->settings;
     
-    /* Create a new SPICE client. */
+    /* Create a new Spice client. */
     SpiceSession* spice_session = spice_session_new();
-    
-    guac_client_log(client, GUAC_LOG_DEBUG, "Registering new channel callback.");
     
     /* Register a callback for handling new channel events. */
     g_signal_connect(spice_session, SPICE_SIGNAL_CHANNEL_NEW,
             G_CALLBACK(guac_spice_client_channel_handler), client);
-    
-    guac_client_log(client, GUAC_LOG_DEBUG, "Setting up connection properties.");
-    
-    guac_client_log(client, GUAC_LOG_DEBUG, "Setting up host/port.");
     
     /* Set hostname and port */
     g_object_set(spice_session, SPICE_PROPERTY_HOST, spice_settings->hostname, NULL);
@@ -100,6 +94,7 @@ SpiceSession* guac_spice_get_session(guac_client* client) {
     spice_client->keyboard = guac_spice_keyboard_alloc(client,
             spice_settings->server_layout);
 
+    /* If file transfer is enabled, set up the required properties. */
     if (spice_settings->file_transfer) {
         guac_client_log(client, GUAC_LOG_DEBUG, "File transfer enabled, configuring Spice client.");
         g_object_set(spice_session, SPICE_PROPERTY_SHARED_DIR, spice_settings->file_directory, NULL);
@@ -113,12 +108,9 @@ SpiceSession* guac_spice_get_session(guac_client* client) {
         guac_client_for_owner(client, guac_spice_folder_expose,
                 spice_client->shared_folder);
     }
-    else {
-        guac_client_log(client, GUAC_LOG_DEBUG, "Disabling file transfer.");
-        g_object_set(spice_session, SPICE_PROPERTY_SHARED_DIR, NULL, NULL);
-    }
 
-    guac_client_log(client, GUAC_LOG_DEBUG, "Finished setting properties.");
+    else
+        g_object_set(spice_session, SPICE_PROPERTY_SHARED_DIR, NULL, NULL);
     
     /* Return the configured session. */
     return spice_session;
@@ -157,12 +149,8 @@ void* guac_spice_client_thread(void* data) {
                 "Unable to connect to SPICE server.");
         return NULL;
     }
-    
-    guac_client_log(client, GUAC_LOG_DEBUG, "Configuration completed, flushing socket.");
 
     guac_socket_flush(client->socket);
-
-    // guac_timestamp last_frame_end = guac_timestamp_current();
     
     guac_client_log(client, GUAC_LOG_DEBUG, "Connection configuration finished, calling spice_session_connect.");
     
@@ -193,6 +181,7 @@ void* guac_spice_client_thread(void* data) {
         g_object_unref(spice_client->spice_session);
         spice_client->spice_session = NULL;
     }
+
     guac_client_stop(client);
     guac_client_log(client, GUAC_LOG_INFO, "Internal SPICE client disconnected");
     return NULL;

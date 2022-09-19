@@ -43,11 +43,11 @@ guac_user_blob_handler guac_spice_clipboard_blob_handler;
 guac_user_end_handler guac_spice_clipboard_end_handler;
 
 /**
- * A handler that will be registered with the SPICE client to handle clipboard
- * data sent from the SPICE server to the client.
+ * A handler that will be registered with the Spice client to handle clipboard
+ * data sent from the Spice server to the client.
  * 
  * @param channel
- *     The main SPICE channel on which this event was fired.
+ *     The main Spice channel on which this event was fired.
  * 
  * @param selection
  *     The clipboard on which the selection occurred.
@@ -70,15 +70,15 @@ void guac_spice_clipboard_selection_handler(SpiceMainChannel* channel,
         guac_client* client);
 
 /**
- * A handler that will be registered with the SPICE client to handle clipboard
- * events where the guest (vdagent) within the SPICE server notifies the client
+ * A handler that will be registered with the Spice client to handle clipboard
+ * events where the guest (vdagent) within the Spice server notifies the client
  * that data is available on the clipboard.
  * 
  * @param channel
  *     The main SpiceChannel on which this event is fired.
  * 
  * @param selection
- *     The SPICE clipboard from which the event is fired.
+ *     The Spice clipboard from which the event is fired.
  * 
  * @param types
  *     The type of data being sent by the agent.
@@ -93,14 +93,14 @@ void guac_spice_clipboard_selection_grab_handler(SpiceMainChannel* channel,
         guint selection, guint32* types, guint ntypes, guac_client* client);
 
 /**
- * A handler that will be called by the SPICE client when the SPICE server
+ * A handler that will be called by the Spice client when the Spice server
  * is done with the clipboard and releases control of it. 
  * 
  * @param chennl
- *     The main SPICE channel on which this event is fired.
+ *     The main Spice channel on which this event is fired.
  * 
  * @param selection
- *     The SPICE server clipboard releasing control.
+ *     The Spice server clipboard releasing control.
  * 
  * @param client
  *     The guac_client that was registered with the callback.
@@ -109,17 +109,17 @@ void guac_spice_clipboard_selection_release_handler(SpiceMainChannel* channel,
         guint selection, guac_client* client);
 
 /**
- * A handler that will be called by the SPICE client when the SPICE server
+ * A handler that will be called by the Spice client when the Spice server
  * would like to check and receive the contents of the client's clipboard.
  * 
  * @param channel
- *     The main SPICE channel on which this event is fired.
+ *     The main Spice channel on which this event is fired.
  * 
  * @param selection
- *     The SPICE server clipboard that is requesting data.
+ *     The Spice server clipboard that is requesting data.
  * 
  * @param type
- *     The type of data to be sent to the SPICE server.
+ *     The type of data to be sent to the Spice server.
  * 
  * @param client
  *     The guac_client object that was registered with the callback.

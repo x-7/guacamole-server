@@ -39,7 +39,7 @@
 #define GUAC_SPICE_KEY_MAX_DEFINITIONS 4
 
 /**
- * All possible sources of SPICE key events tracked by guac_spice_keyboard.
+ * All possible sources of Spice key events tracked by guac_spice_keyboard.
  */
 typedef enum guac_spice_key_source {
 
@@ -50,7 +50,7 @@ typedef enum guac_spice_key_source {
     GUAC_SPICE_KEY_SOURCE_CLIENT = 0,
 
     /**
-     * The key event is being synthesized internally within the SPICE support.
+     * The key event is being synthesized internally within the Spice support.
      */
     GUAC_SPICE_KEY_SOURCE_SYNTHETIC = 1
 
@@ -58,15 +58,15 @@ typedef enum guac_spice_key_source {
 
 /**
  * A representation of a single key within the overall local keyboard,
- * including the definition of that key within the SPICE server's keymap and
+ * including the definition of that key within the Spice server's keymap and
  * whether the key is currently pressed locally.
  */
 typedef struct guac_spice_key {
 
     /**
-     * All definitions of this key within the SPICE server's keymap (keyboard
+     * All definitions of this key within the Spice server's keymap (keyboard
      * layout). Each definition describes which scancode corresponds to this
-     * key from the perspective of the SPICE server, as well as which other
+     * key from the perspective of the Spice server, as well as which other
      * scancodes must be pressed/released for this key to have the desired
      * meaning.
      */
@@ -74,7 +74,7 @@ typedef struct guac_spice_key {
 
     /**
      * The number of definitions within the definitions array. If this key does
-     * not exist within the SPICE server's keymap, this will be 0.
+     * not exist within the Spice server's keymap, this will be 0.
      */
     int num_definitions;
 
@@ -93,18 +93,18 @@ typedef struct guac_spice_key {
 } guac_spice_key;
 
 /**
- * The current keyboard state of an SPICE session.
+ * The current keyboard state of an Spice session.
  */
 typedef struct guac_spice_keyboard {
 
     /**
-     * The guac_client associated with the SPICE session whose keyboard state is
+     * The guac_client associated with the Spice session whose keyboard state is
      * being managed by this guac_spice_keyboard.
      */
     guac_client* client;
 
     /**
-     * The local state of all known lock keys, as a bitwise OR of all SPICE lock
+     * The local state of all known lock keys, as a bitwise OR of all Spice lock
      * key flags. Legal flags are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK,
      * KBD_SYNC_CAPS_LOCK, and KBD_SYNC_KANA_LOCK.
      */
@@ -124,7 +124,7 @@ typedef struct guac_spice_keyboard {
     /**
      * The local state of all keys, as well as the necessary information to
      * translate received keysyms into scancodes or sequences of scancodes for
-     * SPICE. The state of each key is updated based on received Guacamole key
+     * Spice. The state of each key is updated based on received Guacamole key
      * events, while the information describing the behavior and scancode
      * mapping of each key is populated based on an associated keymap.
      *
@@ -149,8 +149,8 @@ typedef struct guac_spice_keyboard {
     /**
      * The total number of keys that the user of the connection is currently
      * holding down. This value indicates only the client-side keyboard state.
-     * It DOES NOT indicate the number of keys currently pressed within the SPICE
-     * server.
+     * It DOES NOT indicate the number of keys currently pressed within the
+     * Spice server.
      */
     int user_pressed_keys;
 
@@ -159,12 +159,12 @@ typedef struct guac_spice_keyboard {
 /**
  * Allocates a new guac_spice_keyboard which manages the keyboard state of the
  * SPICE session associated with the given guac_client. Keyboard events will be
- * dynamically translated from keysym to SPICE scancode according to the
+ * dynamically translated from keysym to Spice scancode according to the
  * provided keymap. The returned guac_spice_keyboard must eventually be freed
  * with guac_spice_keyboard_free().
  *
  * @param client
- *     The guac_client associated with the SPICE session whose keyboard state is
+ *     The guac_client associated with the Spice session whose keyboard state is
  *     to be managed by the newly-allocated guac_spice_keyboard.
  *
  * @param keymap
@@ -172,7 +172,7 @@ typedef struct guac_spice_keyboard {
  *
  * @return
  *     A newly-allocated guac_spice_keyboard which manages the keyboard state
- *     for the SPICE session associated given guac_client.
+ *     for the Spice session associated given guac_client.
  */
 guac_spice_keyboard* guac_spice_keyboard_alloc(guac_client* client,
         const guac_spice_keymap* keymap);
@@ -228,7 +228,7 @@ int guac_spice_keyboard_is_pressed(guac_spice_keyboard* keyboard, int keysym);
  * @see GUAC_SPICE_KEYMAP_MODIFIER_ALTGR
  *
  * @param keyboard
- *     The guac_spice_keyboard associated with the current SPICE session.
+ *     The guac_spice_keyboard associated with the current Spice session.
  *
  * @return
  *     The local state of all known modifier keys.
@@ -240,7 +240,7 @@ unsigned int guac_spice_keyboard_get_modifier_flags(guac_spice_keyboard* keyboar
  * synchronizing the remote state of those keys if it is expected to differ.
  *
  * @param keyboard
- *     The guac_spice_keyboard associated with the current SPICE session.
+ *     The guac_spice_keyboard associated with the current Spice session.
  *
  * @param set_modifiers
  *     The lock key flags which should be set. Legal flags are
@@ -264,7 +264,7 @@ void guac_spice_keyboard_update_locks(guac_spice_keyboard* keyboard,
  * @see GUAC_SPICE_KEYMAP_MODIFIER_ALTGR
  *
  * @param keyboard
- *     The guac_spice_keyboard associated with the current SPICE session.
+ *     The guac_spice_keyboard associated with the current Spice session.
  *
  * @param set_modifiers
  *     The modifier key flags which should be set.
@@ -277,7 +277,7 @@ void guac_spice_keyboard_update_modifiers(guac_spice_keyboard* keyboard,
 
 /**
  * Updates the local state of the given keysym, sending the key events required
- * to replicate that state remotely (on the SPICE server). The key events sent
+ * to replicate that state remotely (on the Spice server). The key events sent
  * will depend on the current keymap.
  *
  * @param keyboard
@@ -300,20 +300,20 @@ int guac_spice_keyboard_update_keysym(guac_spice_keyboard* keyboard,
         int keysym, int pressed, guac_spice_key_source source);
 
 /**
- * Releases all currently pressed keys, sending key release events to the SPICE
+ * Releases all currently pressed keys, sending key release events to the Spice
  * server as necessary. Lock states (Caps Lock, etc.) are not affected.
  *
  * @param keyboard
- *     The guac_spice_keyboard associated with the current SPICE session.
+ *     The guac_spice_keyboard associated with the current Spice session.
  */
 void guac_spice_keyboard_reset(guac_spice_keyboard* keyboard);
 
 /**
- * Callback which is invoked when the SPICE server reports changes to keyboard
+ * Callback which is invoked when the Spice server reports changes to keyboard
  * lock status using a Server Set Keyboard Indicators PDU.
  *
  * @param channel
- *     The spiceContext associated with the current SPICE session.
+ *     The spiceContext associated with the current Spice session.
  *
  * @param client
  *     The guac_client object associated with the callback.

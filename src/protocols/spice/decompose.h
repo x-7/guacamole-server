@@ -40,7 +40,7 @@
  *     The keysym being pressed.
  *
  * @return
- *     Zero if the keysym was successfully decomposed and sent to the SPICE
+ *     Zero if the keysym was successfully decomposed and sent to the Spice
  *     server as a pair of key events (the dead key and base key), non-zero
  *     otherwise.
  */

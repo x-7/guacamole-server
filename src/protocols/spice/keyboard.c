@@ -29,14 +29,14 @@
 
 /**
  * Translates the given keysym into the corresponding lock flag, as would be
- * required by the SPICE synchronize event. If the given keysym does not
+ * required by the Spice synchronize event. If the given keysym does not
  * represent a lock key, zero is returned.
  *
  * @param keysym
- *     The keysym to translate into a SPICE lock flag.
+ *     The keysym to translate into a Spice lock flag.
  *
  * @return
- *     The SPICE lock flag which corresponds to the given keysym, or zero if the
+ *     The Spice lock flag which corresponds to the given keysym, or zero if the
  *     given keysym does not represent a lock key.
  */
 static int guac_spice_keyboard_lock_flag(int keysym) {
@@ -64,17 +64,17 @@ static int guac_spice_keyboard_lock_flag(int keysym) {
 }
 
 /**
- * Immediately sends an SPICE key event having the given scancode and flags.
+ * Immediately sends an Spice key event having the given scancode and flags.
  *
  * @param spice_client
- *     The SPICE client instance associated with the SPICE session along which the
+ *     The Spice client instance associated with the SPICE session along which the
  *     key event should be sent.
  *
  * @param scancode
- *     The scancode of the key to press or release via the SPICE key event.
+ *     The scancode of the key to press or release via the Spice key event.
  *
  * @param flags
- *     Any SPICE-specific flags required for the provided scancode to have the
+ *     Any Spice-specific flags required for the provided scancode to have the
  *     intended meaning, such as KBD_FLAGS_EXTENDED. The possible flags and
  *     their meanings are dictated by SPICE. KBD_FLAGS_DOWN and KBD_FLAGS_UP
  *     need not be specified here - they will automatically be added depending
@@ -97,17 +97,17 @@ static void guac_spice_send_key_event(guac_spice_client* spice_client,
 }
 
 /**
- * Immediately sends an SPICE synchonize event having the given flags. An SPICE
+ * Immediately sends an Spice synchonize event having the given flags. A Spice
  * synchronize event sets the state of remote lock keys absolutely, where a
  * lock key will be active only if its corresponding flag is set in the event.
  *
  * @param spice_client
- *     The SPICE client instance associated with the SPICE session along which the
+ *     The Spice client instance associated with the Spice session along which the
  *     synchronize event should be sent.
  *
  * @param modifiers
  *     Bitwise OR of the flags representing the lock keys which should be set,
- *     if any, as dictated by the SPICE protocol. If no flags are set, then no
+ *     if any, as dictated by the Spice protocol. If no flags are set, then no
  *     lock keys will be active.
  */
 static void guac_spice_send_synchronize_event(guac_spice_client* spice_client,
@@ -132,7 +132,7 @@ static void guac_spice_send_synchronize_event(guac_spice_client* spice_client,
  * returned.
  *
  * @param keyboard
- *     The guac_spice_keyboard associated with the current SPICE session.
+ *     The guac_spice_keyboard associated with the current Spice session.
  *
  * @param keysym
  *     The keysym of the key to lookup within the given keyboard.
@@ -188,7 +188,7 @@ static int guac_spice_count_bits(unsigned int value) {
 }
 
 /**
- * Returns an estimated cost for sending the necessary SPICE events to type the
+ * Returns an estimated cost for sending the necessary Spice events to type the
  * key described by the given guac_spice_keysym_desc, given the current lock and
  * modifier state of the keyboard. A higher cost value indicates that a greater
  * number of events are expected to be required.
@@ -234,10 +234,10 @@ static int guac_spice_keyboard_get_cost(guac_spice_keyboard* keyboard,
 /**
  * Returns a pointer to the guac_spice_key structure representing the
  * definition(s) and state of the key having the given keysym. If no such key
- * is defined within the keyboard layout of the SPICE server, NULL is returned.
+ * is defined within the keyboard layout of the Spice server, NULL is returned.
  *
  * @param keyboard
- *     The guac_spice_keyboard associated with the current SPICE session.
+ *     The guac_spice_keyboard associated with the current Spice session.
  *
  * @param keysym
  *     The keysym of the key to lookup within the given keyboard.
@@ -245,7 +245,7 @@ static int guac_spice_keyboard_get_cost(guac_spice_keyboard* keyboard,
  * @return
  *     A pointer to the guac_spice_key structure representing the definition(s)
  *     and state of the key having the given keysym, or NULL if no such key is
- *     defined within the keyboard layout of the SPICE server.
+ *     defined within the keyboard layout of the Spice server.
  */
 static guac_spice_key* guac_spice_keyboard_get_key(guac_spice_keyboard* keyboard,
         int keysym) {
@@ -265,7 +265,7 @@ static guac_spice_key* guac_spice_keyboard_get_key(guac_spice_keyboard* keyboard
  * current keyboard lock and modifier states.
  *
  * @param keyboard
- *     The guac_spice_keyboard associated with the current SPICE session.
+ *     The guac_spice_keyboard associated with the current Spice session.
  *
  * @param key
  *     The key whose lowest-cost possible definition should be retrieved.
@@ -312,7 +312,7 @@ static const guac_spice_keysym_desc* guac_spice_keyboard_get_definition(guac_spi
  * logged.
  *
  * @param keyboard
- *     The guac_spice_keyboard associated with the current SPICE session.
+ *     The guac_spice_keyboard associated with the current Spice session.
  *
  * @param mapping
  *     The keysym/scancode mapping that should be added to the given keyboard.
@@ -364,7 +364,7 @@ static void guac_spice_keyboard_add_mapping(guac_spice_keyboard* keyboard,
  * Loads all keysym/scancode mappings declared within the given keymap and its
  * parent keymap, if any. These mappings are stored within the given
  * guac_spice_keyboard structure for future use in translating keysyms to the
- * scancodes required by SPICE key events.
+ * scancodes required by Spice key events.
  *
  * @param keyboard
  *     The guac_spice_keyboard which should be initialized with the
@@ -449,11 +449,11 @@ unsigned int guac_spice_keyboard_get_modifier_flags(guac_spice_keyboard* keyboar
 }
 
 /**
- * Presses/releases the requested key by sending one or more SPICE key events, as
+ * Presses/releases the requested key by sending one or more Spice key events, as
  * defined within the keymap defining that key.
  *
  * @param keyboard
- *     The guac_spice_keyboard associated with the current SPICE session.
+ *     The guac_spice_keyboard associated with the current Spice session.
  *
  * @param key
  *     The guac_spice_keysym_desc of the key being pressed or released, as
@@ -464,7 +464,7 @@ unsigned int guac_spice_keyboard_get_modifier_flags(guac_spice_keyboard* keyboar
  *
  * @return
  *     Zero if the key was successfully pressed/released, non-zero if the key
- *     cannot be sent using SPICE key events.
+ *     cannot be sent using Spice key events.
  */
 static const guac_spice_keysym_desc* guac_spice_keyboard_send_defined_key(guac_spice_keyboard* keyboard,
         guac_spice_key* key, int pressed) {
@@ -643,7 +643,7 @@ void guac_spice_keyboard_set_indicators(SpiceChannel* channel, guac_client* clie
     g_object_get(channel, SPICE_PROPERTY_KEY_MODIFIERS, &modifiers, NULL);
 
     /* Update with received locks */
-    guac_client_log(client, GUAC_LOG_DEBUG, "Received updated keyboard lock flags from SPICE server: 0x%X", modifiers);
+    guac_client_log(client, GUAC_LOG_DEBUG, "Received updated keyboard lock flags from Spice server: 0x%X", modifiers);
     keyboard->modifiers = modifiers;
 
 complete:

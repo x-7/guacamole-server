@@ -39,8 +39,8 @@ int guac_spice_clipboard_handler(guac_user* user, guac_stream* stream,
 
     /* Some versions of VDAgent do not support sending clipboard data. */
     if (!spice_main_channel_agent_test_capability(spice_client->main_channel, VD_AGENT_CAP_CLIPBOARD_BY_DEMAND)) {
-        guac_client_log(user->client, GUAC_LOG_WARNING, "SPICE Agent does not "
-            " support sending clipboard data on demend.");
+        guac_client_log(user->client, GUAC_LOG_WARNING, "Spice guest agent does"
+            " not support sending clipboard data on demand.");
         return 0;
     }
 
@@ -71,17 +71,13 @@ int guac_spice_clipboard_end_handler(guac_user* user, guac_stream* stream) {
 
     guac_spice_client* spice_client = (guac_spice_client*) user->client->data;
 
-    /* Send via VNC only if finished connecting */
+    /* Send via Spice only if finished connecting */
     if (spice_client->main_channel != NULL) {
         spice_main_channel_clipboard_selection_notify(spice_client->main_channel,
             VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD,
             VD_AGENT_CLIPBOARD_UTF8_TEXT,
             (const unsigned char*) spice_client->clipboard->buffer,
             spice_client->clipboard->length);
-
-        /* Release the grab on the agent clipboard. */
-        // spice_main_channel_clipboard_selection_release(spice_client->main_channel,
-        //    VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD);
     }
 
     return 0;
@@ -93,6 +89,7 @@ void guac_spice_clipboard_selection_handler(SpiceMainChannel* channel,
 
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
 
+    /* Loop through clipboard types - currently Guacamole only supports text. */
     switch (type) {
         case VD_AGENT_CLIPBOARD_UTF8_TEXT:
             guac_client_log(client, GUAC_LOG_DEBUG, "Notifying client of text "
@@ -125,15 +122,16 @@ void guac_spice_clipboard_selection_grab_handler(SpiceMainChannel* channel,
         return;
     }
 
-    /* Loop through the data types sent by the SPICE server and process them. */
+    /* Loop through the data types sent by the Spice server and process them. */
     for (int i = 0; i < ntypes; i++) {
-        /* At present, Guacamole only supports text. */
+
+        /* Currently Guacamole only supports text. */
         if (types[i] != VD_AGENT_CLIPBOARD_UTF8_TEXT) {
             guac_client_log(client, GUAC_LOG_WARNING, "Unsupported clipboard data type: %d", types[i]);
             continue;
         }
 
-        /* Reset our clipboard and request the data from the SPICE serer. */
+        /* Reset our clipboard and request the data from the Spice serer. */
         guac_spice_client* spice_client = (guac_spice_client*) client->data;
         guac_common_clipboard_reset(spice_client->clipboard, "text/plain");
         spice_main_channel_clipboard_selection_request(channel, selection, types[i]);
@@ -149,6 +147,7 @@ void guac_spice_clipboard_selection_release_handler(SpiceMainChannel* channel,
     guac_client_log(client, GUAC_LOG_DEBUG, "Notifying client of clipboard"
             " release in the guest.");
 
+    /* Transfer data from guest to Guacamole clipboard. */
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
     guac_common_clipboard_send(spice_client->clipboard, client);
 
@@ -160,11 +159,13 @@ void guac_spice_clipboard_selection_request_handler(SpiceMainChannel* channel,
     guac_client_log(client, GUAC_LOG_DEBUG, "Requesting clipboard data from"
             " the client.");
 
+    /* Guacamole only supports one clipboard selection type. */
     if (selection != VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD) {
         guac_client_log(client, GUAC_LOG_WARNING, "Unsupported selection type: %d", selection);
         return;
     }
 
+    /* Currently Guacamole only implements text support - other types are images. */
     if (type != VD_AGENT_CLIPBOARD_UTF8_TEXT) {
         guac_client_log(client, GUAC_LOG_WARNING, "Unsupported clipboard data type: %d", type);
         return;
@@ -173,6 +174,7 @@ void guac_spice_clipboard_selection_request_handler(SpiceMainChannel* channel,
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
     guac_client_log(client, GUAC_LOG_DEBUG, "Sending clipboard data to server: %s", spice_client->clipboard->buffer);
 
+    /* Send the clipboard data to the guest. */
     spice_main_channel_clipboard_selection_notify(channel,
             selection,
             type,

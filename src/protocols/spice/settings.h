@@ -34,17 +34,17 @@
 #define GUAC_SPICE_DEFAULT_RECORDING_NAME "recording"
 
 /**
- * SPICE-specific client data.
+ * Spice-specific client data.
  */
 typedef struct guac_spice_settings {
 
     /**
-     * The hostname of the SPICE server (or repeater) to connect to.
+     * The hostname of the Spice server (or repeater) to connect to.
      */
     char* hostname;
 
     /**
-     * The port of the SPICE server (or repeater) to connect to.
+     * The port of the Spice server (or repeater) to connect to.
      */
     char* port;
     
@@ -55,13 +55,13 @@ typedef struct guac_spice_settings {
     
     /**
      * The type of TLS validation that should be done for encrypted connections
-     * to SPICE servers.
+     * to Spice servers.
      */
     SpiceSessionVerify tls_verify;
     
     /**
      * One or more Base64-encoded certificates to use to validate TLS
-     * connections to the SPICE server.
+     * connections to the Spice server.
      */
     char* ca;
     
@@ -72,12 +72,12 @@ typedef struct guac_spice_settings {
     char* ca_file;
     
     /**
-     * The public key of the SPICE server for TLS verification.
+     * The public key of the Spice server for TLS verification.
      */
     char* pubkey;
     
     /**
-     * SPICE supports connecting to remote servers via a proxy server. You can
+     * Spice supports connecting to remote servers via a proxy server. You can
      * specify the proxy server to use in this property.
      */
     char* proxy;
@@ -93,7 +93,7 @@ typedef struct guac_spice_settings {
     char* password;
 
     /**
-     * Space-separated list of encodings to use within the SPICE session.
+     * Space-separated list of encodings to use within the Spice session.
      */
     char* encodings;
 
@@ -161,8 +161,8 @@ typedef struct guac_spice_settings {
     int retries;
 
     /**
-     * The encoding to use for clipboard data sent to the SPICE server, or NULL
-     * to use the encoding required by the SPICE standard.
+     * The encoding to use for clipboard data sent to the Spice server, or NULL
+     * to use the encoding required by the Spice standard.
      */
     char* clipboard_encoding;
 
@@ -182,7 +182,7 @@ typedef struct guac_spice_settings {
 
 #ifdef ENABLE_COMMON_SSH
     /**
-     * Whether SFTP should be enabled for the SPICE connection.
+     * Whether SFTP should be enabled for the Spice connection.
      */
     bool enable_sftp;
 

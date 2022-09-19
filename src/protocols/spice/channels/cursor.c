@@ -33,11 +33,6 @@
 #include <guacamole/socket.h>
 #include <spice-client-glib-2.0/spice-client.h>
 
-/* Define cairo_format_stride_for_width() if missing */
-#ifndef HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH
-#define cairo_format_stride_for_width(format, width) (width*4)
-#endif
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -46,8 +41,9 @@
 
 void guac_spice_cursor_hide(SpiceChannel* channel, guac_client* client) {
     
-    guac_client_log(client, GUAC_LOG_TRACE, "Cursor hide signal received.");
+    guac_client_log(client, GUAC_LOG_TRACE, "Hiding the cursor.");
 
+    /* Set the cursor to a blank image, hiding it. */
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
     guac_common_cursor_set_blank(spice_client->display->cursor);  
 }
@@ -55,14 +51,16 @@ void guac_spice_cursor_hide(SpiceChannel* channel, guac_client* client) {
 void guac_spice_cursor_move(SpiceChannel* channel, int x, int y,
         guac_client* client) {
 
-    guac_client_log(client, GUAC_LOG_TRACE, "Cursor move signal received.");
+    guac_client_log(client, GUAC_LOG_TRACE, "Cursor move signal received: %d, %d", x, y);
 
+    /* Update the cursor with the new coordinates. */
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
     guac_common_cursor_update(spice_client->display->cursor, client->__owner, x, y, spice_client->display->cursor->button_mask);
 }
 
 void guac_spice_cursor_reset(SpiceChannel* channel, guac_client* client) {
-    guac_client_log(client, GUAC_LOG_DEBUG, "Cursor reset signal received, not yet implemented");
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "Cursor reset signal received, not yet implemented");
 }
 
 void guac_spice_cursor_set(SpiceChannel* channel, int width, int height,

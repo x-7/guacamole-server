@@ -40,9 +40,9 @@
 #define GUAC_SPICE_FRAME_TIMEOUT 0
 
 /**
- * The amount of time to wait for a new message from the SPICE server when
+ * The amount of time to wait for a new message from the Spice server when
  * beginning a new frame. This value must be kept reasonably small such that
- * a slow SPICE server will not prevent external events from being handled (such
+ * a slow Spice server will not prevent external events from being handled (such
  * as the stop signal from guac_client_stop()), but large enough that the
  * message handling loop does not eat up CPU spinning.
  */

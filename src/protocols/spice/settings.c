@@ -95,24 +95,24 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
 enum SPICE_ARGS_IDX {
     
     /**
-     * The hostname of the SPICE server (or repeater) to connect to.
+     * The hostname of the Spice server to connect to.
      */
     IDX_HOSTNAME,
 
     /**
-     * The port of the SPICE server (or repeater) to connect to.
+     * The port of the Spice server to connect to.
      */
     IDX_PORT,
     
     /**
-     * Whether or not the connection to the SPICE server should be made via
+     * Whether or not the connection to the Spice server should be made via
      * TLS.
      */
     IDX_TLS,
     
     /**
      * The verification mode that should be used to validate TLS connections
-     * to the SPICE server.
+     * to the Spice server.
      */
     IDX_TLS_VERIFY,
     
@@ -134,7 +134,7 @@ enum SPICE_ARGS_IDX {
     IDX_PUBKEY,
     
     /**
-     * The proxy server to connect through when connecting to the SPICE server.
+     * The proxy server to connect through when connecting to the Spice server.
      */
     IDX_PROXY,
 
@@ -145,7 +145,7 @@ enum SPICE_ARGS_IDX {
     IDX_READ_ONLY,
 
     /**
-     * Space-separated list of encodings to use within the SPICE session. If not
+     * Space-separated list of encodings to use within the Spice session. If not
      * specified, this will be:
      *
      *     "zrle ultra copyrect hextile zlib corre rre raw".
@@ -153,18 +153,18 @@ enum SPICE_ARGS_IDX {
     IDX_ENCODINGS,
 
     /**
-     * The username to send to the SPICE server if authentication is requested.
+     * The username to send to the Spice server if authentication is requested.
      */
     IDX_USERNAME,
     
     /**
-     * The password to send to the SPICE server if authentication is requested.
+     * The password to send to the Spice server if authentication is requested.
      */
     IDX_PASSWORD,
 
     /**
      * "true" if the red and blue components of each color should be swapped,
-     * "false" or blank otherwise. This is mainly used for SPICE servers that do
+     * "false" or blank otherwise. This is mainly used for Spice servers that do
      * not properly handle colors.
      */
     IDX_SWAP_RED_BLUE,
@@ -187,10 +187,10 @@ enum SPICE_ARGS_IDX {
     IDX_AUTORETRY,
 
     /**
-     * The encoding to use for clipboard data sent to the SPICE server if we are
+     * The encoding to use for clipboard data sent to the Spice server if we are
      * going to be deviating from the standard (which mandates ISO 8829-1).
      * Valid values are "ISO8829-1" (the only legal value with respect to the
-     * SPICE standard), "UTF-8", "UTF-16", and "CP2252".
+     * Spice standard), "UTF-8", "UTF-16", and "CP2252".
      */
     IDX_CLIPBOARD_ENCODING,
 
@@ -216,7 +216,7 @@ enum SPICE_ARGS_IDX {
     IDX_FILE_DIRECTORY,
     
     /**
-     * Whether or not the shared directory should be read-only to the SPICE
+     * Whether or not the shared directory should be read-only to the Spice
      * server.
      */
     IDX_FILE_TRANSFER_RO,
@@ -242,20 +242,20 @@ enum SPICE_ARGS_IDX {
     /**
      * The name of the keymap chosen as the layout of the server. Legal names
      * are defined within the *.keymap files in the "keymaps" directory of the
-     * source for Guacamole's SPICE support.
+     * source for Guacamole's Spice support.
      */
     IDX_SERVER_LAYOUT,
 
 #ifdef ENABLE_COMMON_SSH
     /**
-     * "true" if SFTP should be enabled for the SPICE connection, "false" or
+     * "true" if SFTP should be enabled for the Spice connection, "false" or
      * blank otherwise.
      */
     IDX_ENABLE_SFTP,
 
     /**
      * The hostname of the SSH server to connect to for SFTP. If blank, the
-     * hostname of the SPICE server will be used.
+     * hostname of the Spice server will be used.
      */
     IDX_SFTP_HOSTNAME,
 
@@ -651,7 +651,7 @@ void guac_spice_settings_free(guac_spice_settings* settings) {
     free(settings->username);
 
 #ifdef ENABLE_SPICE_REPEATER
-    /* Free SPICE repeater settings */
+    /* Free Spice repeater settings */
     free(settings->dest_host);
 #endif
 

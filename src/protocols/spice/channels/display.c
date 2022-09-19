@@ -32,11 +32,6 @@
 #include <guacamole/socket.h>
 #include <spice-client-glib-2.0/spice-client.h>
 
-/* Define cairo_format_stride_for_width() if missing */
-#ifndef HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH
-#define cairo_format_stride_for_width(format, width) (width*4)
-#endif
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -46,7 +41,9 @@
 void guac_spice_client_display_update(SpiceChannel* channel, int x,
         int y, int w, int h, guac_client* client) {
 
-    guac_client_log(client, GUAC_LOG_DEBUG, "Received request to update Spice display: %d, %d, %d, %d", x, y, w, h);
+    guac_client_log(client, GUAC_LOG_TRACE,
+            "Received request to update Spice display: %d, %d, %d, %d",
+            x, y, w, h);
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
 
     /* Retrieve the primary display buffer */
@@ -94,7 +91,7 @@ void guac_spice_client_display_update(SpiceChannel* channel, int x,
 void guac_spice_client_display_gl_draw(SpiceChannel* channel, int x,
         int y, int w, int h, guac_client* client) {
 
-    guac_client_log(client, GUAC_LOG_DEBUG, "Received gl draw request.");
+    guac_client_log(client, GUAC_LOG_TRACE, "Received GL draw request.");
 
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
 
@@ -109,13 +106,8 @@ void guac_spice_client_display_gl_draw(SpiceChannel* channel, int x,
 void guac_spice_client_display_mark(SpiceChannel* channel, gint mark,
         guac_client* client) {
     
-    guac_client_log(client, GUAC_LOG_DEBUG, "Received signal to mark display.");
-
-    int channelId;
-    
-    g_object_get(channel, "channel-id", &channelId, NULL);
-    
-    guac_client_log(client, GUAC_LOG_DEBUG, "Channel %i marked as available.", channelId);
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "Received signal to mark display, which currently has no effect.");
     
 }
 
@@ -125,10 +117,12 @@ void guac_spice_client_display_primary_create(SpiceChannel* channel,
     
     guac_client_log(client, GUAC_LOG_DEBUG, "Received request to create primary display.");
 
+    /* Allocate the Guacamole display. */
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
     spice_client->display = guac_common_display_alloc(client,
             width, height);
 
+    /* Create a matching Cairo image surface. */
     guac_client_log(client, GUAC_LOG_TRACE, "Creating Cairo image surface.");
     cairo_surface_t* surface = cairo_image_surface_create_for_data(imgdata, CAIRO_FORMAT_RGB24,
             width, height, stride);
@@ -138,9 +132,11 @@ void guac_spice_client_display_primary_create(SpiceChannel* channel,
     guac_common_surface_draw(spice_client->display->default_surface,
             0, 0, surface);
 
+    /* Flush the default surface. */
     guac_client_log(client, GUAC_LOG_TRACE, "Flushing the default surface.");
     guac_common_surface_flush(spice_client->display->default_surface);
 
+    /* Mark the end of the frame and flush the socket. */
     guac_client_end_frame(client);
     guac_socket_flush(client->socket);
     
@@ -152,6 +148,7 @@ void guac_spice_client_display_primary_destroy(SpiceChannel* channel,
     
     guac_client_log(client, GUAC_LOG_DEBUG, "Received request to destroy the primary display.");
 
+    /* Free the Guacamole display. */
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
     guac_common_display_free(spice_client->display);
     

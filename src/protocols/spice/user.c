@@ -55,7 +55,7 @@ int guac_spice_user_join_handler(guac_user* user, int argc, char** argv) {
     /* Store settings at user level */
     user->data = settings;
 
-    /* Connect via SPICE if owner */
+    /* Connect via Spice if owner */
     if (user->owner) {
 
         /* Store owner's settings at client level */

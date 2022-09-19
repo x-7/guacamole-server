@@ -24,9 +24,14 @@
 
 #include <spice-client-glib-2.0/spice-client.h>
 
+/* Define cairo_format_stride_for_width() if missing */
+#ifndef HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH
+#define cairo_format_stride_for_width(format, width) (width*4)
+#endif
+
 /**
- * Callback invoked by the SPICE library when it receives a new binary image
- * data from the SPICE server. The image itself will be stored in the designated
+ * Callback invoked by the Spice library when it receives a new binary image
+ * data from the Spice server. The image itself will be stored in the designated
  * sub-rectangle of client->framebuffer.
  *
  * @param channel
@@ -54,7 +59,7 @@ void guac_spice_client_display_update(SpiceDisplayChannel* channel, int x,
 
 /**
  * The callback function invoked when the RED_DISPLAY_MARK command is received
- * from the SPICE server and the display should be exposed.
+ * from the Spice server and the display should be exposed.
  * 
  * @param channel
  *     The SpiceDisplayChannel on which the event was received.
@@ -70,13 +75,13 @@ void guac_spice_client_display_mark(SpiceDisplayChannel* channel, gint mark,
 
 /**
  * The callback function invoked when primary display buffer data is sent from
- * the SPICE server to the client.
+ * the Spice server to the client.
  * 
  * @param channel
  *     The SpiceDisplayChannel on which this event was received.
  * 
  * @param format
- *     The SPICE format of the received data.
+ *     The Spice format of the received data.
  * 
  * @param width
  *     The total width of the display.
@@ -132,7 +137,7 @@ void guac_spice_client_display_mark(SpiceDisplayChannel* channel,
         gboolean marked, guac_client* client);
 
 /**
- * Callback invoked by the SPICE client when it receives a CopyRect message.
+ * Callback invoked by the Spice client when it receives a CopyRect message.
  * CopyRect specified a rectangle of source data within the display and a
  * set of X/Y coordinates to which that rectangle should be copied.
  *

@@ -46,42 +46,42 @@
 #include <pthread.h>
 
 /**
- * SPICE-specific client data.
+ * Spice-specific client data.
  */
 typedef struct guac_spice_client {
 
     /**
-     * The SPICE client thread.
+     * The Spice client thread.
      */
     pthread_t client_thread;
 
     /**
-     * The underlying SPICE session.
+     * The underlying Spice session.
      */
     SpiceSession* spice_session;
     
     /**
-     * The main SPICE channel.
+     * The main Spice channel.
      */
     SpiceMainChannel* main_channel;
     
     /**
-     * The SPICE audio playback channel.
+     * The Spice audio playback channel.
      */
     SpicePlaybackChannel* playback_channel;
     
     /**
-     * The SPICE audio recording/input channel.
+     * The Spice audio recording/input channel.
      */
     SpiceRecordChannel* record_channel;
     
     /**
-     * The SPICE channel that handles the cursor display and events.
+     * The Spice channel that handles the cursor display and events.
      */
     SpiceCursorChannel* cursor_channel;
     
     /**
-     * The SPICE channel that handles mouse and keyboard inputs.
+     * The Spice channel that handles mouse and keyboard inputs.
      */
     SpiceInputsChannel* inputs_channel;
 
@@ -96,7 +96,7 @@ typedef struct guac_spice_client {
     guac_common_display* display;
     
     /**
-     * The SPICE display channel.
+     * The Spice display channel.
      */
     SpiceDisplayChannel* spice_display;
 
@@ -149,16 +149,16 @@ typedef struct guac_spice_client {
     pthread_mutexattr_t attributes;
 
     /**
-     * Lock which is used to synchronizes access to SPICE data structures
+     * Lock which is used to synchronizes access to Spice data structures
      * between user input and client threads. It prevents input handlers
-     * from running when SPICE data structures are allocated or freed
+     * from running when Spice data structures are allocated or freed
      * by the client thread.
      */
     pthread_rwlock_t lock;
 
     /**
-     * Lock which synchronizes the sending of each SPICE message, ensuring
-     * attempts to send SPICE messages never overlap.
+     * Lock which synchronizes the sending of each Spice message, ensuring
+     * attempts to send Spice messages never overlap.
      */
     pthread_mutex_t message_lock;
 
@@ -175,27 +175,27 @@ typedef struct guac_spice_client {
 } guac_spice_client;
 
 /**
- * Allocates a new rfbClient instance given the parameters stored within the
+ * Allocates a new Spice client session given the parameters stored within the
  * client, returning NULL on failure.
  *
  * @param client
- *     The guac_client associated with the settings of the desired SPICE
+ *     The guac_client associated with the settings of the desired Spice
  *     connection.
  *
  * @return
- *     A new rfbClient instance allocated and connected according to the
+ *     A new Spice session instance allocated and connected according to the
  *     parameters stored within the given client, or NULL if connecting to the
- *     SPICE server fails.
+ *     Spice server fails.
  */
 SpiceSession* guac_spice_get_session(guac_client* client);
 
 /**
- * SPICE client thread. This thread initiates the SPICE connection and
+ * Spice client thread. This thread initiates the Spice connection and
  * ultimately runs throughout the duration of the client, existing as a single
  * instance, shared by all users.
  *
  * @param data
- *     The guac_client instance associated with the requested SPICE connection.
+ *     The guac_client instance associated with the requested Spice connection.
  *
  * @return
  *     Always NULL.

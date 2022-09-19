@@ -39,7 +39,7 @@
 #include <syslog.h>
 
 /**
- * Callback invoked by SPICE when an informational message needs to be
+ * Callback invoked by Spice when an informational message needs to be
  * logged.
  *
  * @param format
@@ -52,7 +52,7 @@
 void guac_spice_client_log_info(const char* format, ...);
 
 /**
- * Callback invoked by SPICE when an error message needs to be logged.
+ * Callback invoked by Spice when an error message needs to be logged.
  *
  * @param format
  *     A printf-style format string to log.

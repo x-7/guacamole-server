@@ -32,9 +32,7 @@ void guac_spice_client_audio_playback_data_handler(
         SpicePlaybackChannel* channel, gpointer data, gint size,
         guac_client* client) {
     
-    guac_client_log(client, GUAC_LOG_DEBUG, "Calling audio playback data handler.");
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
-
     guac_audio_stream_write_pcm(spice_client->audio_playback, data, size);
     
 }
@@ -42,7 +40,8 @@ void guac_spice_client_audio_playback_data_handler(
 void guac_spice_client_audio_playback_delay_handler(
         SpicePlaybackChannel* channel, guac_client* client) {
     
-    guac_client_log(client, GUAC_LOG_DEBUG, "Calling audio playback delay handler.");
+    guac_client_log(client, GUAC_LOG_WARNING,
+            "Delay handler for audio playback is not currently implemented.");
     
 }
 
@@ -50,31 +49,30 @@ void guac_spice_client_audio_playback_start_handler(
         SpicePlaybackChannel* channel, gint format, gint channels, gint rate,
         guac_client* client) {
     
-    guac_client_log(client, GUAC_LOG_DEBUG, "Calling audio playback start handler.");
+    guac_client_log(client, GUAC_LOG_DEBUG, "Starting audio playback.");
     guac_client_log(client, GUAC_LOG_DEBUG, "Format: %d", format);
     guac_client_log(client, GUAC_LOG_DEBUG, "Channels: %d", channels);
     guac_client_log(client, GUAC_LOG_DEBUG, "Rate: %d", rate);
 
-    guac_spice_client* spice_client = (guac_spice_client*) client->data;
-
-    int bps = 16;
-
+    /* Spice only supports a single audio format. */
     if (format != SPICE_AUDIO_FMT_S16) {
         guac_client_log(client, GUAC_LOG_WARNING, "Unknown Spice audio format: %d", format);
         return;
     }
 
-    spice_client->audio_playback = guac_audio_stream_alloc(client, NULL, rate, channels, bps);
+    /* Allocate the stream. */
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+    spice_client->audio_playback = guac_audio_stream_alloc(client, NULL, rate, channels, 16);
     
 }
 
 void guac_spice_client_audio_playback_stop_handler(
         SpicePlaybackChannel* channel, guac_client* client) {
     
-    guac_client_log(client, GUAC_LOG_DEBUG, "Calling audio playback stop handler.");
+    guac_client_log(client, GUAC_LOG_DEBUG, "Stoppig audio playback..");
 
+    /* Free the audio stream. */
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
-
     guac_audio_stream_free(spice_client->audio_playback);
     
 }
@@ -110,14 +108,8 @@ static int guac_spice_audio_parse_mimetype(const char* mimetype, int* rate,
     int parsed_channels = 1;
     int parsed_bps;
 
-    /* PCM audio with one byte per sample */
-    if (strncmp(mimetype, "audio/L8;", 9) == 0) {
-        mimetype += 8; /* Advance to semicolon ONLY */
-        parsed_bps = 1;
-    }
-
     /* PCM audio with two bytes per sample */
-    else if (strncmp(mimetype, "audio/L16;", 10) == 0) {
+    if (strncmp(mimetype, "audio/L16;", 10) == 0) {
         mimetype += 9; /* Advance to semicolon ONLY */
         parsed_bps = 2;
     }
@@ -175,6 +167,27 @@ static int guac_spice_audio_parse_mimetype(const char* mimetype, int* rate,
 
 }
 
+/**
+ * A callback function that is invoked to send audio data from the given
+ * stream to the Spice server.
+ *
+ * @param user
+ *     The user who owns the connection and the stream. This is unused by
+ *     this function.
+ *
+ * @param stream
+ *     The stream where the audio data originated. This is unused by this
+ *     function.
+ * 
+ * @param data
+ *     The audio data to send.
+ * 
+ * @param length
+ *     The number of bytes of audio data to send.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
 static int guac_spice_audio_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length) {
 
@@ -188,6 +201,19 @@ static int guac_spice_audio_blob_handler(guac_user* user, guac_stream* stream,
 
 }
 
+/**
+ * A callback function that is called when the audio stream ends sending data
+ * to the Spice server.
+ *
+ * @param user
+ *     The user who owns the connection and the stream.
+ *
+ * @param stream
+ *     The stream that was sending the audio data.
+ *
+ * @return
+ *     Zero on success, non-zero on failure.
+ */
 static int guac_spice_audio_end_handler(guac_user* user, guac_stream* stream) {
 
     /* Ignore - the RECORD_CHANNEL channel will simply not receive anything */
@@ -218,7 +244,7 @@ int guac_spice_client_audio_record_handler(guac_user* user, guac_stream* stream,
         return 0;
     }
 
-    /* Init stream data */
+    /* Initialize stream handlers */
     stream->blob_handler = guac_spice_audio_blob_handler;
     stream->end_handler = guac_spice_audio_end_handler;
 
@@ -253,7 +279,7 @@ int guac_spice_client_audio_record_handler(guac_user* user, guac_stream* stream,
 static void guac_spice_audio_stream_ack(guac_user* user, guac_stream* stream,
         const char* message, guac_protocol_status status) {
 
-    /* Do not send ack unless both sides of the audio stream are ready */
+    /* Do not send if the connection owner or stream is null. */
     if (user == NULL || stream == NULL)
         return;
 
@@ -263,6 +289,20 @@ static void guac_spice_audio_stream_ack(guac_user* user, guac_stream* stream,
 
 }
 
+/**
+ * A callback that is invoked for the connection owner when audio recording
+ * starts, which will notify the client the owner is connected from to start
+ * sending audio data.
+ *
+ * @param owner
+ *     The owner of the connection.
+ *
+ * @param data
+ *     A pointer to the guac_client associated with this connection.
+ *
+ * @return
+ *     Always NULL;
+ */
 static void* spice_client_record_start_callback(guac_user* owner, void* data) {
     
     guac_spice_client* spice_client = (guac_spice_client*) data;
@@ -274,6 +314,19 @@ static void* spice_client_record_start_callback(guac_user* owner, void* data) {
 
 }
 
+/**
+ * A callback that is invoked for the connection owner when audio recording
+ * is stopped, telling the client to stop sending audio data.
+ * 
+ * @param owner
+ *     The user who owns this connection.
+ *
+ * @param data
+ *     A pointer to the guac_client associated with this connection.
+ *
+ * @return
+ *     Always NULL;
+ */
 static void* spice_client_record_stop_callback(guac_user* owner, void* data) {
 
     guac_spice_client* spice_client = (guac_spice_client*) data;

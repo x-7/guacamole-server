@@ -48,7 +48,7 @@
 #include <string.h>
 
 /**
- * Handle events for the main SPICE channel, taking the appropriate action
+ * Handle events for the main Spice channel, taking the appropriate action
  * for known events, and logging warnings for unknowns and non-fatal events.
  * 
  * @param channel
@@ -72,7 +72,7 @@ static void guac_spice_client_main_channel_handler(SpiceChannel *channel,
         /* Channel has been closed, so we abort the connection. */
         case SPICE_CHANNEL_CLOSED:
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "Disconnected from SPICE server.");
+                    "Disconnected from Spice server.");
             break;
             
         /* Channel has been opened - log it and do nothing else. */
@@ -100,25 +100,25 @@ static void guac_spice_client_main_channel_handler(SpiceChannel *channel,
         /* TLS error, abort the connection with a warning. */
         case SPICE_CHANNEL_ERROR_TLS:
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "TLS failure connecting to SPICE server.");
+                    "TLS failure connecting to Spice server.");
             break;
             
         /* I/O error, abort the connection with a warning. */
         case SPICE_CHANNEL_ERROR_IO:
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "IO error communicating with SPICE server.");
+                    "IO error communicating with Spice server.");
             break;
             
         /* SPICE link error, abort the connection with a warning. */
         case SPICE_CHANNEL_ERROR_LINK:
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "Link error communicating with SPICE server.");
+                    "Link error communicating with Spice server.");
             break;
             
         /* Connect error, abort the connection with a warning. */
         case SPICE_CHANNEL_ERROR_CONNECT:
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "Connection error communicating with SPICe server.");
+                    "Connection error communicating with Spice server.");
             break;
             
         /* Some other unknown event - log it and move on. */
@@ -134,7 +134,7 @@ int guac_client_init(guac_client* client) {
     /* Set client args */
     client->args = GUAC_SPICE_CLIENT_ARGS;
 
-    guac_client_log(client, GUAC_LOG_DEBUG, "Initializing SPICE client.");
+    guac_client_log(client, GUAC_LOG_DEBUG, "Initializing Spice client.");
 
     /* Alloc client data */
     guac_spice_client* spice_client = calloc(1, sizeof(guac_spice_client));

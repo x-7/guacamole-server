@@ -86,7 +86,7 @@
 #define GUAC_SPICE_KEYMAP_MODIFIER_ALTGR 2
 
 /**
- * Represents a keysym-to-scancode mapping for SPICE, with extra information
+ * Represents a keysym-to-scancode mapping for Spice, with extra information
  * about the state of prerequisite keysyms.
  */
 typedef struct guac_spice_keysym_desc {
@@ -102,7 +102,7 @@ typedef struct guac_spice_keysym_desc {
     int scancode;
 
     /**
-     * Required SPICE-specific flags that must be sent along with the scancode.
+     * Required Spice-specific flags that must be sent along with the scancode.
      */
     int flags;
 
@@ -111,7 +111,7 @@ typedef struct guac_spice_keysym_desc {
      * associated scancode to be interpreted as this keysym.
      *
      * If the associated keysym is pressed, and any of these modifiers are not
-     * currently active, Guacamole's SPICE support must send additional events
+     * currently active, Guacamole's Spice support must send additional events
      * to activate these modifiers prior to sending the scancode for this
      * keysym.
      *
@@ -125,7 +125,7 @@ typedef struct guac_spice_keysym_desc {
      * associated scancode to be interpreted as this keysym.
      *
      * If the associated keysym is pressed, and any of these modifiers are
-     * currently active, Guacamole's SPICE support must send additional events
+     * currently active, Guacamole's Spice support must send additional events
      * to deactivate these modifiers prior to sending the scancode for this
      * keysym.
      *
