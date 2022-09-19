@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "channels/audio.h"
 #include "channels/clipboard.h"
 #include "input.h"
 #include "common/display.h"
@@ -65,6 +66,10 @@ int guac_spice_user_join_handler(guac_user* user, int argc, char** argv) {
             guac_user_log(user, GUAC_LOG_ERROR, "Unable to start SPICE client thread.");
             return 1;
         }
+
+        /* Handle inbound audio streams if audio input is enabled */
+        if (settings->audio_input_enabled)
+            user->audio_handler = guac_spice_client_audio_record_handler;
 
     }
 

@@ -111,6 +111,11 @@ typedef struct guac_spice_settings {
      * Whether audio is enabled.
      */
     bool audio_enabled;
+
+    /**
+     * Whether audio input is enabled.
+     */
+    bool audio_input_enabled;
     
     /**
      * If file transfer capability should be enabled.

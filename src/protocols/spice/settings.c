@@ -55,6 +55,7 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
     "clipboard-encoding",
 
     "enable-audio",
+    "enable-audio-input",
     "file-transfer",
     "file-directory",
     "file-transfer-ro",
@@ -197,6 +198,11 @@ enum SPICE_ARGS_IDX {
      * "true" if audio should be enabled, "false" or blank otherwise.
      */
     IDX_ENABLE_AUDIO,
+
+    /**
+     * "true" if audio input should be enabled, "false" or blank otherwise.
+     */
+    IDX_ENABLE_AUDIO_INPUT,
 
     /**
      * "true" if file transfer should be enabled, "false" or blank otherwise.
@@ -473,6 +479,11 @@ guac_spice_settings* guac_spice_parse_args(guac_user* user,
     settings->audio_enabled =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_ENABLE_AUDIO, false);
+
+    /* Audio input enable/disable */
+    settings->audio_input_enabled =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_ENABLE_AUDIO_INPUT, false);
 
     /* File transfer enable/disable */
     settings->file_transfer =

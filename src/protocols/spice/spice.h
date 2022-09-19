@@ -163,9 +163,14 @@ typedef struct guac_spice_client {
     pthread_mutex_t message_lock;
 
     /**
-     * Audio output, if any.
+     * Audio output stream, if any.
      */
     guac_audio_stream* audio_playback;
+
+    /**
+     * Audio input stream, if any.
+     */
+    guac_stream* audio_input;
 
 } guac_spice_client;
 

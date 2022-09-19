@@ -327,7 +327,7 @@ void guac_spice_client_channel_handler(SpiceSession *spice_session,
     }
     
     /* Check for audio recording channel and set up the channel. */
-    if (SPICE_IS_RECORD_CHANNEL(channel) && settings->audio_enabled) {
+    if (SPICE_IS_RECORD_CHANNEL(channel) && settings->audio_input_enabled) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Setting up audio record channel.");
         spice_client->record_channel = SPICE_RECORD_CHANNEL(channel);
         g_signal_connect(channel, SPICE_SIGNAL_RECORD_START,

@@ -96,6 +96,11 @@ void guac_spice_client_audio_playback_stop_handler(
         SpicePlaybackChannel* channel, guac_client* client);
 
 /**
+ * Handler for inbound audio data (audio input).
+ */
+guac_user_audio_handler guac_spice_client_audio_record_handler;
+
+/**
  * The callback function invoked by the client when the SPICE server requests
  * that the client begin recording audio data to send to the server.
  * 
