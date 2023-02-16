@@ -201,9 +201,10 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
     rfb_client->MallocFrameBuffer = guac_vnc_malloc_framebuffer;
     rfb_client->canHandleNewFBSize = 1;
 
-    /* Set hostname and port */
+    /* Set hostname, port, and timeout */
     rfb_client->serverHost = strdup(vnc_settings->hostname);
     rfb_client->serverPort = vnc_settings->port;
+    rfb_client->connectTimeout = vnc_settings->timeout;
 
 #ifdef ENABLE_VNC_REPEATER
     /* Set repeater parameters if specified */

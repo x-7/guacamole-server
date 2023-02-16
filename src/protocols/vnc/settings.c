@@ -36,6 +36,7 @@
 const char* GUAC_VNC_CLIENT_ARGS[] = {
     "hostname",
     "port",
+    "timeout",
     "read-only",
     "encodings",
     GUAC_VNC_ARGV_USERNAME,
@@ -107,6 +108,11 @@ enum VNC_ARGS_IDX {
      * The port of the VNC server (or repeater) to connect to.
      */
     IDX_PORT,
+
+    /**
+     * The number of seconds to wait for the connection before timing out.
+     */
+    IDX_TIMEOUT,
 
     /**
      * "true" if this connection should be read-only (user input should be
@@ -404,6 +410,10 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->port =
         guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_PORT, 0);
+
+    settings->timeout =
+        guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_TIMEOUT, GUAC_VNC_DEFAULT_CONNECTION_TIMEOUT);
 
     settings->username =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,

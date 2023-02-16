@@ -26,6 +26,11 @@
 #include <stdbool.h>
 
 /**
+ * The default number of seconds to wait for a connection before timing out.
+ */
+#define GUAC_VNC_DEFAULT_CONNECTION_TIMEOUT 10
+
+/**
  * The filename to use for the screen recording, if not specified.
  */
 #define GUAC_VNC_DEFAULT_RECORDING_NAME "recording"
@@ -44,6 +49,11 @@ typedef struct guac_vnc_settings {
      * The port of the VNC server (or repeater) to connect to.
      */
     int port;
+
+    /**
+     * The number of seconds to wait for the connection before timing out.
+     */
+    int timeout;
 
     /**
      * The username given in the arguments.
