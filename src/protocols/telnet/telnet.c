@@ -26,6 +26,7 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
+#include <guacamole/string.h>
 #include <guacamole/timestamp.h>
 #include <guacamole/wol.h>
 #include <libtelnet.h>
@@ -40,6 +41,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 /**
@@ -392,69 +394,184 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
     guac_telnet_settings* settings = telnet_client->settings;
 
-    struct addrinfo hints = {
-        .ai_family   = AF_UNSPEC,
-        .ai_socktype = SOCK_STREAM,
-        .ai_protocol = IPPROTO_TCP
-    };
+    if (settings->ssh_tunnel) {
 
-    /* Get socket */
-    fd = socket(AF_INET, SOCK_STREAM, 0);
+        /* Allocate memory for the SSH tunnel data. */
+        telnet_client->ssh_tunnel = malloc(sizeof(guac_ssh_tunnel));
 
-    /* Get addresses connection */
-    if ((retval = getaddrinfo(settings->hostname, settings->port,
-                    &hints, &addresses))) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error parsing given address or port: %s",
-                gai_strerror(retval));
-        return NULL;
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "SSH tunneling is enabled, connecting via SSH.");
 
-    }
+        /* Associate the guac_client object with the tunnel. */
+        telnet_client->ssh_tunnel->client = client;
 
-    /* Attempt connection to each address until success */
-    current_address = addresses;
-    while (current_address != NULL) {
+        /* Abort if tunnel username is missing */
+        if (settings->ssh_tunnel_username == NULL) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "An SSH tunnel-specific username is required if "
+                    "SSH tunneling is enabled.");
+            return NULL;
+        }
 
-        int retval;
+        telnet_client->ssh_tunnel->user =
+            guac_common_ssh_create_user(settings->ssh_tunnel_username);
 
-        /* Resolve hostname */
-        if ((retval = getnameinfo(current_address->ai_addr,
-                current_address->ai_addrlen,
-                connected_address, sizeof(connected_address),
-                connected_port, sizeof(connected_port),
-                NI_NUMERICHOST | NI_NUMERICSERV)))
-            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to resolve host: %s", gai_strerror(retval));
+        /* Import SSH tunnel private key, if given */
+        if (settings->ssh_tunnel_private_key != NULL) {
 
-        /* Connect */
-        if (connect(fd, current_address->ai_addr,
-                        current_address->ai_addrlen) == 0) {
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Authenticating SSH tunnel with private key.");
 
-            guac_client_log(client, GUAC_LOG_DEBUG, "Successfully connected to "
-                    "host %s, port %s", connected_address, connected_port);
-
-            /* Done if successful connect */
-            break;
+            /* Abort if SSH tunnel private key cannot be read */
+            if (guac_common_ssh_user_import_key(telnet_client->ssh_tunnel->user,
+                        settings->ssh_tunnel_private_key,
+                        settings->ssh_tunnel_passphrase)) {
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                        "SSH tunnel private key unreadable.");
+                return NULL;
+            }
 
         }
 
-        /* Otherwise log information regarding bind failure */
-        else
-            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to connect to "
-                    "host %s, port %s: %s",
-                    connected_address, connected_port, strerror(errno));
+        /* Otherwise, use specified SSH tunnel password */
+        else {
 
-        current_address = current_address->ai_next;
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Authenticating SSH tunnel with password.");
+
+            guac_common_ssh_user_set_password(telnet_client->ssh_tunnel->user,
+                    settings->ssh_tunnel_password);
+
+        }
+
+        /* Attempt SSH tunnel connection */
+        telnet_client->ssh_tunnel->session =
+            guac_common_ssh_create_session(client, settings->ssh_tunnel_host,
+                    settings->ssh_tunnel_port, telnet_client->ssh_tunnel->user,
+                    settings->ssh_tunnel_alive_interval,
+                    settings->ssh_tunnel_host_key, NULL);
+
+        /* Fail if SSH tunnel connection does not succeed */
+        if (telnet_client->ssh_tunnel->session == NULL) {
+            /* Already aborted within guac_common_ssh_create_session() */
+            return NULL;
+        }
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "SSH session created for tunneling, initializing the tunnel.");
+
+        /* Initialize the tunnel or fail. */
+        if (guac_common_ssh_tunnel_init(telnet_client->ssh_tunnel,
+                settings->hostname, strtol(settings->port, NULL, 10))) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Unable to initialize SSH tunnel, aborting connection.");
+            return NULL;
+        }
+
+        /* If tunnel socket is not returned, bail out. */
+        if (telnet_client->ssh_tunnel->socket_path == NULL) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Unable to obtain socket for SSH tunnel, aborting.");
+            return NULL;
+        }
+
+        /* Overwrite the hostname with the path to the socket and zero out port. */
+        settings->hostname = guac_strdup(telnet_client->ssh_tunnel->socket_path);
+        settings->port = 0;
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "SSH tunnel connection succeeded.");
+
+        fd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+        if (fd < 0) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Error opening UNIX socket for telnet connection: %s",
+                strerror(errno));
+            return NULL;
+        }
+
+        struct sockaddr_un socket_addr = {
+            .sun_family = AF_UNIX
+        };
+        strncpy(socket_addr.sun_path, telnet_client->ssh_tunnel->socket_path,
+                sizeof(socket_addr.sun_path) - 1);
+
+        if (connect(fd, (const struct sockaddr *) &socket_addr, sizeof(struct sockaddr_un))) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Error connecting to UNIX socket for SSH tunnel: %s",
+                telnet_client->ssh_tunnel->socket_path);
+            return NULL;
+        }
 
     }
 
-    /* If unable to connect to anything, fail */
-    if (current_address == NULL) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
-                "Unable to connect to any addresses.");
-        return NULL;
-    }
+    /* SSH tunneling is not in use, so open the standard TCP socket. */
+    else {
+        struct addrinfo hints = {
+            .ai_family   = AF_UNSPEC,
+            .ai_socktype = SOCK_STREAM,
+            .ai_protocol = IPPROTO_TCP
+        };
 
-    /* Free addrinfo */
-    freeaddrinfo(addresses);
+        /* Get socket */
+        fd = socket(AF_INET, SOCK_STREAM, 0);
+
+        /* Get addresses connection */
+        if ((retval = getaddrinfo(settings->hostname, settings->port,
+                        &hints, &addresses))) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error parsing given address or port: %s",
+                    gai_strerror(retval));
+            return NULL;
+
+        }
+
+        /* Attempt connection to each address until success */
+        current_address = addresses;
+        while (current_address != NULL) {
+
+            int retval;
+
+            /* Resolve hostname */
+            if ((retval = getnameinfo(current_address->ai_addr,
+                    current_address->ai_addrlen,
+                    connected_address, sizeof(connected_address),
+                    connected_port, sizeof(connected_port),
+                    NI_NUMERICHOST | NI_NUMERICSERV)))
+                guac_client_log(client, GUAC_LOG_DEBUG, "Unable to resolve host: %s", gai_strerror(retval));
+
+            /* Connect */
+            if (connect(fd, current_address->ai_addr,
+                            current_address->ai_addrlen) == 0) {
+
+                guac_client_log(client, GUAC_LOG_DEBUG, "Successfully connected to "
+                        "host %s, port %s", connected_address, connected_port);
+
+                /* Done if successful connect */
+                break;
+
+            }
+
+            /* Otherwise log information regarding bind failure */
+            else
+                guac_client_log(client, GUAC_LOG_DEBUG, "Unable to connect to "
+                        "host %s, port %s: %s",
+                        connected_address, connected_port, strerror(errno));
+
+            current_address = current_address->ai_next;
+
+        }
+
+        /* If unable to connect to anything, fail */
+        if (current_address == NULL) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
+                    "Unable to connect to any addresses.");
+            return NULL;
+        }
+
+        /* Free addrinfo */
+        freeaddrinfo(addresses);
+    }
 
     /* Open telnet session */
     telnet_t* telnet = telnet_init(__telnet_options, __guac_telnet_event_handler, 0, client);
