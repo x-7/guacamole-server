@@ -22,6 +22,7 @@
 #include "argv.h"
 #include "client.h"
 #include "common/defaults.h"
+#include "common-ssh/ssh-constants.h"
 #include "settings.h"
 #include "terminal/terminal.h"
 
@@ -47,6 +48,15 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "sftp-disable-upload",
     "private-key",
     "passphrase",
+    "ssh-tunnel",
+    "ssh-tunnel-host",
+    "ssh-tunnel-port",
+    "ssh-tunnel-host-key",
+    "ssh-tunnel-username",
+    "ssh-tunnel-password",
+    "ssh-tunnel-private-key",
+    "ssh-tunnel-passphrase",
+    "ssh-tunnel-alive-interval",
 #ifdef ENABLE_SSH_AGENT
     "enable-agent",
 #endif
@@ -147,6 +157,55 @@ enum SSH_ARGS_IDX {
      * The passphrase required to decrypt the private key, if any.
      */
     IDX_PASSPHRASE,
+
+    /**
+     * True if SSH tunneling should be enabled. If false or not set, SSH
+     * tunneling will not be used.
+     */
+    IDX_SSH_TUNNEL,
+
+    /**
+     * The hostname or IP address of the SSH server to use for tunneling.
+     */
+    IDX_SSH_TUNNEL_HOST,
+
+    /**
+     * The TCP port of the SSH server to use for tunneling.
+     */
+    IDX_SSH_TUNNEL_PORT,
+
+    /**
+     * If host key checking should be done, the public key of the SSH host
+     * to be used for tunneling.
+     */
+    IDX_SSH_TUNNEL_HOST_KEY,
+
+    /**
+     * The username for authenticating to the SSH hsot for tunneling.
+     */
+    IDX_SSH_TUNNEL_USERNAME,
+
+    /**
+     * The password to use to authenticate to the SSH host for tunneling.
+     */
+    IDX_SSH_TUNNEL_PASSWORD,
+
+    /**
+     * The private key to use to authenticate to the SSH host for tunneling,
+     * as an alternative to password-based authentication.
+     */
+    IDX_SSH_TUNNEL_PRIVATE_KEY,
+
+    /**
+     * The passphrase to use to decrypt the private key.
+     */
+    IDX_SSH_TUNNEL_PASSPHRASE,
+
+    /**
+     * The interval at which keepalive packets should be sent to the SSH
+     * tunneling server, or zero if keepalive should be disabled.
+     */
+    IDX_SSH_TUNNEL_ALIVE_INTERVAL,
 
 #ifdef ENABLE_SSH_AGENT
     /**
@@ -418,6 +477,49 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_SFTP_DISABLE_UPLOAD, false);
 
+    /* Parse SSH tunneling. */
+    settings->ssh_tunnel =
+        guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_SSH_TUNNEL, false);
+    
+    /* Only parse remaining tunneling settings if it has been enabled. */
+    if (settings->ssh_tunnel) {
+
+        settings->ssh_tunnel_host =
+            guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_HOST, NULL);
+
+        settings->ssh_tunnel_port =
+            guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PORT, GUAC_COMMON_SSH_DEFAULT_PORT);
+
+        settings->ssh_tunnel_host_key =
+            guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_HOST_KEY, NULL);
+
+        settings->ssh_tunnel_username =
+            guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_USERNAME, NULL);
+
+        settings->ssh_tunnel_password =
+            guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PASSWORD, NULL);
+
+        settings->ssh_tunnel_private_key =
+            guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PRIVATE_KEY, NULL);
+
+        settings->ssh_tunnel_passphrase =
+            guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PASSPHRASE, NULL);
+
+        settings->ssh_tunnel_alive_interval =
+            guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_ALIVE_INTERVAL,
+                    GUAC_COMMON_SSH_DEFAULT_ALIVE_INTERVAL);
+
+    }
+
 #ifdef ENABLE_SSH_AGENT
     settings->enable_agent =
         guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
@@ -427,7 +529,7 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     /* Read port */
     settings->port =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_PORT, GUAC_SSH_DEFAULT_PORT);
+                IDX_PORT, GUAC_COMMON_SSH_DEFAULT_PORT);
 
     /* Read-only mode */
     settings->read_only =
@@ -577,6 +679,15 @@ void guac_ssh_settings_free(guac_ssh_settings* settings) {
 
     /* Free SFTP settings */
     free(settings->sftp_root_directory);
+
+    /* Free tunnel settings */
+    free(settings->ssh_tunnel_host);
+    free(settings->ssh_tunnel_host_key);
+    free(settings->ssh_tunnel_port);
+    free(settings->ssh_tunnel_username);
+    free(settings->ssh_tunnel_password);
+    free(settings->ssh_tunnel_private_key);
+    free(settings->ssh_tunnel_passphrase);
 
     /* Free typescript settings */
     free(settings->typescript_name);
