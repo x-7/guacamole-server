@@ -22,6 +22,7 @@
 #include "argv.h"
 #include "client.h"
 #include "common/defaults.h"
+#include "common-ssh/ssh-constants.h"
 #include "settings.h"
 
 #include <guacamole/user.h>
@@ -75,6 +76,15 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "sftp-server-alive-interval",
     "sftp-disable-download",
     "sftp-disable-upload",
+    "ssh-tunnel",
+    "ssh-tunnel-host",
+    "ssh-tunnel-port",
+    "ssh-tunnel-host-key",
+    "ssh-tunnel-username",
+    "ssh-tunnel-password",
+    "ssh-tunnel-private-key",
+    "ssh-tunnel-passphrase",
+    "ssh-tunnel-alive-interval",
 #endif
 
     "recording-path",
@@ -284,6 +294,55 @@ enum VNC_ARGS_IDX {
      * "false" or not set, file uploads will be allowed.
      */
     IDX_SFTP_DISABLE_UPLOAD,
+
+    /**
+     * True if SSH tunneling should be enabled. If false or not set, SSH
+     * tunneling will not be used.
+     */
+    IDX_SSH_TUNNEL,
+
+    /**
+     * The hostname or IP address of the SSH server to use for tunneling.
+     */
+    IDX_SSH_TUNNEL_HOST,
+
+    /**
+     * The TCP port of the SSH server to use for tunneling.
+     */
+    IDX_SSH_TUNNEL_PORT,
+
+    /**
+     * If host key checking should be done, the public key of the SSH host
+     * to be used for tunneling.
+     */
+    IDX_SSH_TUNNEL_HOST_KEY,
+
+    /**
+     * The username for authenticating to the SSH hsot for tunneling.
+     */
+    IDX_SSH_TUNNEL_USERNAME,
+
+    /**
+     * The password to use to authenticate to the SSH host for tunneling.
+     */
+    IDX_SSH_TUNNEL_PASSWORD,
+
+    /**
+     * The private key to use to authenticate to the SSH host for tunneling,
+     * as an alternative to password-based authentication.
+     */
+    IDX_SSH_TUNNEL_PRIVATE_KEY,
+
+    /**
+     * The passphrase to use to decrypt the private key.
+     */
+    IDX_SSH_TUNNEL_PASSPHRASE,
+
+    /**
+     * The interval at which keepalive packets should be sent to the SSH
+     * tunneling server, or zero if keepalive should be disabled.
+     */
+    IDX_SSH_TUNNEL_ALIVE_INTERVAL,
 #endif
 
     /**
@@ -547,12 +606,13 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     /* SFTP root directory */
     settings->sftp_root_directory =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_SFTP_ROOT_DIRECTORY, "/");
+                IDX_SFTP_ROOT_DIRECTORY, GUAC_COMMON_SSH_SFTP_DEFAULT_ROOT);
 
     /* Default keepalive value */
     settings->sftp_server_alive_interval =
         guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_SFTP_SERVER_ALIVE_INTERVAL, 0);
+                IDX_SFTP_SERVER_ALIVE_INTERVAL,
+                GUAC_COMMON_SSH_DEFAULT_ALIVE_INTERVAL);
     
     settings->sftp_disable_download =
         guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
@@ -561,6 +621,49 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->sftp_disable_upload =
         guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_SFTP_DISABLE_UPLOAD, false);
+
+    /* Parse SSH tunneling settings. */
+    settings->ssh_tunnel =
+        guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_SSH_TUNNEL, false);
+    
+    /* Only parse remaining tunneling settings if it has been enabled. */
+    if (settings->ssh_tunnel) {
+
+        settings->ssh_tunnel_host =
+            guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_HOST, NULL);
+
+        settings->ssh_tunnel_port =
+            guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PORT, GUAC_COMMON_SSH_DEFAULT_PORT);
+
+        settings->ssh_tunnel_host_key =
+            guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_HOST_KEY, NULL);
+
+        settings->ssh_tunnel_username =
+            guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_USERNAME, NULL);
+
+        settings->ssh_tunnel_password =
+            guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PASSWORD, NULL);
+
+        settings->ssh_tunnel_private_key =
+            guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PRIVATE_KEY, NULL);
+
+        settings->ssh_tunnel_passphrase =
+            guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PASSPHRASE, NULL);
+
+        settings->ssh_tunnel_alive_interval =
+            guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_ALIVE_INTERVAL,
+                    GUAC_COMMON_SSH_DEFAULT_ALIVE_INTERVAL);
+
+    }
 #endif
 
     /* Read recording path */
@@ -670,6 +773,13 @@ void guac_vnc_settings_free(guac_vnc_settings* settings) {
     free(settings->sftp_port);
     free(settings->sftp_private_key);
     free(settings->sftp_username);
+    free(settings->ssh_tunnel_host);
+    free(settings->ssh_tunnel_host_key);
+    free(settings->ssh_tunnel_port);
+    free(settings->ssh_tunnel_username);
+    free(settings->ssh_tunnel_password);
+    free(settings->ssh_tunnel_private_key);
+    free(settings->ssh_tunnel_passphrase);
 #endif
 
 #ifdef ENABLE_PULSE
