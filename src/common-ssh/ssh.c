@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 #ifdef LIBSSH2_USES_GCRYPT
@@ -409,81 +410,111 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         guac_ssh_credential_handler* credential_handler) {
 
     int retval;
-
     int fd;
-    struct addrinfo* addresses;
-    struct addrinfo* current_address;
+    struct stat sb;
 
-    char connected_address[1024];
-    char connected_port[64];
-
-    struct addrinfo hints = {
-        .ai_family   = AF_UNSPEC,
-        .ai_socktype = SOCK_STREAM,
-        .ai_protocol = IPPROTO_TCP
-    };
-
-    /* Get addresses connection */
-    if ((retval = getaddrinfo(hostname, port, &hints, &addresses))) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Error parsing given address or port: %s",
-                gai_strerror(retval));
-        return NULL;
-    }
-
-    /* Attempt connection to each address until success */
-    current_address = addresses;
-    while (current_address != NULL) {
-
-        /* Resolve hostname */
-        if ((retval = getnameinfo(current_address->ai_addr,
-                current_address->ai_addrlen,
-                connected_address, sizeof(connected_address),
-                connected_port, sizeof(connected_port),
-                NI_NUMERICHOST | NI_NUMERICSERV)))
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Unable to resolve host: %s", gai_strerror(retval));
-
-        /* Get socket */
-        fd = socket(current_address->ai_family, SOCK_STREAM, 0);
+    /* Hostname is a UNIX socket */
+    if (stat(hostname, &sb) == 0 && (sb.st_mode & S_IFMT) == S_IFSOCK) {
+        fd = socket(AF_UNIX, SOCK_STREAM, 0);
         if (fd < 0) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "Unable to create socket: %s", strerror(errno));
-            freeaddrinfo(addresses);
+                    "Error opening UNIX socket: %s", strerror(errno));
             return NULL;
         }
 
-        /* Connect */
-        if (connect(fd, current_address->ai_addr,
-                        current_address->ai_addrlen) == 0) {
+        struct sockaddr_un socket_addr = {
+            .sun_family = AF_UNIX
+        };
+        strncpy(socket_addr.sun_path, hostname, sizeof(socket_addr.sun_path) - 1);
 
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Successfully connected to host %s, port %s",
-                    connected_address, connected_port);
-
-            /* Done if successful connect */
-            break;
-
+        if (connect(fd, (const struct sockaddr *) &socket_addr, sizeof(struct sockaddr_un))) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Error connecting to UNIX socket for SSH tunnel: %s",
+                hostname);
+            return NULL;
         }
 
-        /* Otherwise log information regarding bind failure */
-        guac_client_log(client, GUAC_LOG_DEBUG, "Unable to connect to "
-                "host %s, port %s: %s",
-                connected_address, connected_port, strerror(errno));
-
-        close(fd);
-        current_address = current_address->ai_next;
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Connected SSH to UNIX socket at \"%s\"", hostname);
 
     }
 
-    /* Free addrinfo */
-    freeaddrinfo(addresses);
+    /* Normal hostname or IP. */
+    else {
+        struct addrinfo* addresses;
+        struct addrinfo* current_address;
 
-    /* If unable to connect to anything, fail */
-    if (current_address == NULL) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
-                "Unable to connect to any addresses.");
-        return NULL;
+        char connected_address[1024];
+        char connected_port[64];
+
+        struct addrinfo hints = {
+            .ai_family   = AF_UNSPEC,
+            .ai_socktype = SOCK_STREAM,
+            .ai_protocol = IPPROTO_TCP
+        };
+
+        /* Get addresses connection */
+        if ((retval = getaddrinfo(hostname, port, &hints, &addresses))) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Error parsing given address or port: %s",
+                    gai_strerror(retval));
+            return NULL;
+        }
+
+        /* Attempt connection to each address until success */
+        current_address = addresses;
+        while (current_address != NULL) {
+
+            /* Resolve hostname */
+            if ((retval = getnameinfo(current_address->ai_addr,
+                    current_address->ai_addrlen,
+                    connected_address, sizeof(connected_address),
+                    connected_port, sizeof(connected_port),
+                    NI_NUMERICHOST | NI_NUMERICSERV)))
+                guac_client_log(client, GUAC_LOG_DEBUG,
+                        "Unable to resolve host: %s", gai_strerror(retval));
+
+            /* Get socket */
+            fd = socket(current_address->ai_family, SOCK_STREAM, 0);
+            if (fd < 0) {
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                        "Unable to create socket: %s", strerror(errno));
+                freeaddrinfo(addresses);
+                return NULL;
+            }
+
+            /* Connect */
+            if (connect(fd, current_address->ai_addr,
+                            current_address->ai_addrlen) == 0) {
+
+                guac_client_log(client, GUAC_LOG_DEBUG,
+                        "Successfully connected to host %s, port %s",
+                        connected_address, connected_port);
+
+                /* Done if successful connect */
+                break;
+
+            }
+
+            /* Otherwise log information regarding bind failure */
+            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to connect to "
+                    "host %s, port %s: %s",
+                    connected_address, connected_port, strerror(errno));
+
+            close(fd);
+            current_address = current_address->ai_next;
+
+        }
+
+        /* Free addrinfo */
+        freeaddrinfo(addresses);
+
+        /* If unable to connect to anything, fail */
+        if (current_address == NULL) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
+                    "Unable to connect to any addresses.");
+            return NULL;
+        }
     }
 
     /* Allocate new session */
