@@ -75,6 +75,13 @@ AC_CHECK_LIB([dl], [dlopen],
                             AC_MSG_ERROR("libdl is required on systems which do not otherwise provide dlopen()"),
                             [#include <dlfcn.h>])])
 
+# Include librt for timer_*() if necessary
+AC_CHECK_LIB([rt], [timer_create],
+             [RT_LIBS=-lrt],
+             [AC_CHECK_DECL([timer_create],,
+                            AC_MSG_ERROR("timer_*() functions require librt and it was not found."),
+                            [#include <time.h>])])
+
 #
 # libuuid
 #
@@ -124,6 +131,7 @@ fi
 AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
 
 AC_SUBST(DL_LIBS)
+AC_SUBST(RT_LIBS)
 AC_SUBST(MATH_LIBS)
 AC_SUBST(PNG_LIBS)
 AC_SUBST(JPEG_LIBS)
